@@ -6,10 +6,11 @@ A repository with impleemntations of a bunch of different data structures. Use a
 - [x] Linked list
 - [ ] Binary Search Tree (BST)
 - [ ] Red-Black Tree
-- [ ] Sets
+- [ ] Sets (Sorted array based) 
 - [ ] Heap (min/max)
-- [ ] Map
+- [ ] Map (tree based)
 - [ ] Hashmap (Boss fight)
+- [ ] Hashset
 - [ ] Graphs (Hell, how is it working, I'm scared)
 
 ### Links:
