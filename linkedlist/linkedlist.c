@@ -2,16 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef struct Node {
-    int val;
-    struct Node* next;
-} Node;
-
-typedef struct LinkedList {
-    struct Node* head;
-    struct Node* tail;
-    int size;
-} LinkedList;
+#include "linkedlist.h"
 
 Node* create_node(int val) 
 {
@@ -23,6 +14,7 @@ Node* create_node(int val)
 
     new_node->val = val;
     new_node->next = NULL;
+
     return new_node;
 }
 
@@ -73,7 +65,7 @@ void prepend_node(LinkedList* list, int val)
 
 int delete_node(LinkedList* list, int index) 
 {
-    if (index < 0 || index > list->size) {
+    if (index < 0 || index > list->size - 1) {
         return 1;
     }
 
@@ -126,6 +118,10 @@ Node* get_node_by_index(LinkedList* list, int index)
 {
     Node* current = list->head;
     int i = 0;
+
+    if (index < 0) {
+        return NULL;
+    }
 
     while (current) {
         if (i == index) {
