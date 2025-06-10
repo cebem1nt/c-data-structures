@@ -4,20 +4,6 @@
 
 #include "linkedlist.h"
 
-Node* create_node(int val) 
-{
-    Node* new_node = malloc(sizeof(Node));
-    
-    if (!new_node) {
-        return NULL;
-    }
-
-    new_node->val = val;
-    new_node->next = NULL;
-
-    return new_node;
-}
-
 LinkedList* create_linkedlist() 
 {
     LinkedList* new_linked_list = malloc(sizeof(LinkedList));
@@ -31,6 +17,20 @@ LinkedList* create_linkedlist()
     new_linked_list->size = 0;
 
     return new_linked_list;
+}
+
+Node* create_node(int val) 
+{
+    Node* new_node = malloc(sizeof(Node));
+    
+    if (!new_node) {
+        return NULL;
+    }
+
+    new_node->val = val;
+    new_node->next = NULL;
+
+    return new_node;
 }
 
 void append_node(LinkedList* list, int val) 
