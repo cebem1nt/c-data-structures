@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include "bst.h"
 
 BSTNode* create_bst_node(int val) 
@@ -61,25 +62,33 @@ BSTNode* find_min(BSTNode* node) {
 
 void bst_delete(BSTNode** node, int val) 
 {
+    // If node is null (for some reason) just exit
     if (*node == NULL) {
         return;   
     }
 
-    if ((*node)->val < val) {
+    // Recur down the tree based on node values
+    if ((*node)->val < val) 
+    {
         bst_delete(&((*node)->right), val);
     }
 
-    else if ((*node)->val > val) {
+    else if ((*node)->val > val) 
+    {
         bst_delete(&((*node)->left), val);
     }
 
-    else {
+    // Part of actually deleting nodes
+    else if ((*node)->val == val) 
+    {
+        // If this is leaf node, then just delete the node.
         if ((*node)->left == NULL && (*node)->right == NULL) 
         {
             free(*node);
             *node = NULL;
         }
 
+        // If the node only has right child, then we replace the node with it
         else if ((*node)->left == NULL) 
         {
             BSTNode* tmp = *node;
@@ -88,6 +97,7 @@ void bst_delete(BSTNode** node, int val)
             free(tmp);
         }
 
+        // Same but with the left child
         else if ((*node)->right == NULL) 
         {
             BSTNode* tmp = *node;
@@ -96,9 +106,9 @@ void bst_delete(BSTNode** node, int val)
             free(tmp);
         }
 
-        else
-        { 
-            /* In order successor - node whose value is the smallest item of right subtree. 
+        else { 
+            /*
+             * In-order successor - node whose value is the smallest item of right subtree. 
              * It can and will be used in our case to correctly restructure tree.
              */
             BSTNode* successor = find_min((*node)->right);
@@ -109,5 +119,13 @@ void bst_delete(BSTNode** node, int val)
             // Delete successor (As it is now current node)
             bst_delete(&((*node)->right), successor->val);
         }
+    }
+}
+
+void inorder(BSTNode* root) {
+    if (root != NULL) {
+        inorder(root->left);
+        printf("%d ", root->val);
+        inorder(root->right);
     }
 }
