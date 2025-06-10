@@ -4,6 +4,7 @@
 int main() 
 {
     BSTNode* tree = create_bst_node(1);
+
     bst_insert(&tree, 20);
     bst_insert(&tree, 40);
     bst_insert(&tree, 60);
@@ -12,6 +13,7 @@ int main()
 
     inorder(tree);
     printf("\n");
+    
     bst_delete(&tree, 0);
     inorder(tree);
 

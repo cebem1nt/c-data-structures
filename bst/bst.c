@@ -48,6 +48,7 @@ void bst_insert(BSTNode** node, int val)
     if (val < (*node)->val) {
         bst_insert(&((*node)->left), val);
     } 
+    
     else if (val > (*node)->val) {
         bst_insert(&((*node)->right), val);
     } 
@@ -57,15 +58,22 @@ BSTNode* find_min(BSTNode* node) {
     while (node->left != NULL) {
         node = node->left;
     }
+
+    return node;
+}
+
+BSTNode* find_max(BSTNode* node) {
+    while (node->right != NULL) {
+        node = node->right;
+    }
+
     return node;
 }
 
 void bst_delete(BSTNode** node, int val) 
 {
     // If node is null (for some reason) just exit
-    if (*node == NULL) {
-        return;   
-    }
+    if (*node == NULL) return;   
 
     // Recur down the tree based on node values
     if ((*node)->val < val) 
@@ -122,10 +130,38 @@ void bst_delete(BSTNode** node, int val)
     }
 }
 
-void inorder(BSTNode* root) {
+BSTNode* bst_find(BSTNode* node, int val) 
+{
+    if (node == NULL) return NULL;
+
+    if (node->val == val) {
+        return node;
+    }
+
+    else if (val < node->val) {
+        return bst_find(node->left, val);
+    }
+
+    else if (val > node->val) {
+        return bst_find(node->right, val);
+    }
+
+    return NULL;
+}
+
+void inorder(BSTNode* root) 
+{
     if (root != NULL) {
         inorder(root->left);
         printf("%d ", root->val);
         inorder(root->right);
+    }
+}
+
+void free_tree(BSTNode* root) {
+    if (root != NULL) {
+        free_tree(root->left);
+        free_tree(root->right);
+        free(root);
     }
 }

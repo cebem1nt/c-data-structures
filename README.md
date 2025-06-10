@@ -4,7 +4,7 @@ A repository with impleemntations of a bunch of different data structures. Use a
 ## TODO
 
 - [x] Linked list
-- [ ] Binary Search Tree (BST)
+- [x] Binary Search Tree (BST)
 - [ ] Red-Black Tree
 - [ ] Sets (Sorted array based) 
 - [ ] Heap (min/max)

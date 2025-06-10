@@ -30,4 +30,19 @@ void bst_delete(BSTNode** node, int val);
  */ 
 void inorder(BSTNode* root);
 
+/*
+ * Finds a node by given value.
+ * Returns NULL if no node was found
+ */
+BSTNode* bst_find(BSTNode* node, int val); 
+
+// Returns node with the smallest value
+BSTNode* find_min(BSTNode* node);
+
+// Returns node with the biggest value
+BSTNode* find_max(BSTNode* node);
+
+// Frees the given tree
+void free_tree(BSTNode* root);
+
 #endif
