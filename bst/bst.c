@@ -44,14 +44,20 @@ void bst_insert(BSTNode** node, int val)
         return;
     }
 
+    BSTNode** child;
+
     // Recur down the tree if we're not at the end of it
-    if (val < (*node)->val) {
-        bst_insert(&((*node)->left), val);
+    if (val < (*node)->val) 
+    {
+        child = &((*node)->left);
     } 
     
-    else if (val > (*node)->val) {
-        bst_insert(&((*node)->right), val);
+    else if (val > (*node)->val) 
+    {
+        child = &((*node)->right);
     } 
+
+    bst_insert(child, val)
 }
 
 BSTNode* find_min(BSTNode* node) {
