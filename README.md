@@ -5,6 +5,7 @@ A repository with impleemntations of a bunch of different data structures. Use a
 
 - [x] Linked list
 - [x] Binary Search Tree (BST)
+- [ ] AVL Tree
 - [ ] Red-Black Tree
 - [ ] Sets (Sorted array based) 
 - [ ] Heap (min/max)
