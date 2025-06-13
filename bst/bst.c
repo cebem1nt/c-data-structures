@@ -57,7 +57,7 @@ void bst_insert(BSTNode** node, int val)
         child = &((*node)->right);
     } 
 
-    bst_insert(child, val)
+    bst_insert(child, val);
 }
 
 BSTNode* find_min(BSTNode* node) {
