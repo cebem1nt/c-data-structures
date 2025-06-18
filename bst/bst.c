@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+
 #include "bst.h"
 
 BSTNode* create_bst_node(int val) 
@@ -16,25 +17,6 @@ BSTNode* create_bst_node(int val)
 
     return new_node;
 }
-
-// BSTNode* bst_insert(BSTNode* root, int val) 
-// {
-//     // Inserting node to the end of tree
-//     if (root == NULL) {           
-//         return create_bst_node(val);
-//     }
-
-//     // Recur down the tree if we're not in the end of it
-//     if (val < root->val) {
-//         root->left = bst_insert(root->left, val);
-//     }
-
-//     else if (val > root->val) {
-//         root->right = bst_insert(root->right, val);
-//     } 
-
-//     return root;
-// }
 
 void bst_insert(BSTNode** node, int val) 
 {
@@ -76,24 +58,23 @@ BSTNode* find_max(BSTNode* node) {
     return node;
 }
 
-void bst_delete(BSTNode** node, int val) 
+void bst_delete(BSTNode** node, int key) 
 {
-    // If node is null (for some reason) just exit
     if (*node == NULL) return;   
 
     // Recur down the tree based on node values
-    if ((*node)->val < val) 
+    if ((*node)->val < key) 
     {
-        bst_delete(&((*node)->right), val);
+        bst_delete(&((*node)->right), key);
     }
 
-    else if ((*node)->val > val) 
+    else if ((*node)->val > key) 
     {
-        bst_delete(&((*node)->left), val);
+        bst_delete(&((*node)->left), key);
     }
 
     // Part of actually deleting nodes
-    else if ((*node)->val == val) 
+    else if ((*node)->val == key) 
     {
         // If this is leaf node, then just delete the node.
         if ((*node)->left == NULL && (*node)->right == NULL) 
@@ -136,20 +117,20 @@ void bst_delete(BSTNode** node, int val)
     }
 }
 
-BSTNode* bst_find(BSTNode* node, int val) 
+BSTNode* bst_find(BSTNode* node, int key) 
 {
     if (node == NULL) return NULL;
 
-    if (node->val == val) {
+    if (node->val == key) {
         return node;
     }
 
-    else if (val < node->val) {
-        return bst_find(node->left, val);
+    else if (key < node->val) {
+        return bst_find(node->left, key);
     }
 
-    else if (val > node->val) {
-        return bst_find(node->right, val);
+    else if (key > node->val) {
+        return bst_find(node->right, key);
     }
 
     return NULL;

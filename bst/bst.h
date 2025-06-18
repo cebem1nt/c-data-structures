@@ -23,7 +23,7 @@ void bst_insert(BSTNode** node, int val);
  * Takes in double pointer to the node and value to search by
  * Modifies node in place. Deletes the node with given value
  */
-void bst_delete(BSTNode** node, int val);
+void bst_delete(BSTNode** node, int key);
 
 /* 
  * Prints tree using in order traversing
@@ -34,7 +34,7 @@ void inorder(BSTNode* root);
  * Finds a node by given value.
  * Returns NULL if no node was found
  */
-BSTNode* bst_find(BSTNode* node, int val); 
+BSTNode* bst_find(BSTNode* node, int key); 
 
 // Returns node with the smallest value
 BSTNode* find_min(BSTNode* node);
