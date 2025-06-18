@@ -32,6 +32,19 @@ int avl_height(AVLNode* tree)
     return tree->height;
 }
 
+int is_leaf(AVLNode* node) 
+{
+    return node->left == NULL && node->right == NULL;
+}
+
+AVLNode* find_min(AVLNode* node) {
+    while (node->left != NULL) {
+        node = node->left;
+    }
+
+    return node;
+}
+
 int balance_factor(AVLNode* tree) 
 {
     if (tree == NULL) {
@@ -40,7 +53,7 @@ int balance_factor(AVLNode* tree)
     return avl_height(tree->left) - avl_height(tree->right);
 }
 
-AVLNode* avl_left_rotate(AVLNode* r) 
+AVLNode* avl_lrotate(AVLNode* r) 
 {
     // Example of an unbalanced tree 
     // that needs left rotate
@@ -70,7 +83,7 @@ AVLNode* avl_left_rotate(AVLNode* r)
     return b;
 }
 
-AVLNode* avl_right_rotate(AVLNode* r) 
+AVLNode* avl_rrotate(AVLNode* r) 
 {
     // Example of an unbalanced tre  e 
     // that needs right rotate
@@ -100,7 +113,8 @@ AVLNode* avl_right_rotate(AVLNode* r)
     return b;
 }
 
-void avl_insert(AVLNode** node, int val) {
+void avl_insert(AVLNode** node, int val) 
+{
     // WARNING! UGLY CODE! Do something.
 
     if (*node == NULL) {
@@ -128,24 +142,106 @@ void avl_insert(AVLNode** node, int val) {
 
     // Left Left Case
     if (factor > 1 && val < (*node)->left->val) {
-        *node = avl_right_rotate(*node);
+        *node = avl_rrotate(*node);
     }
 
     // Right Right Case
     else if (factor < -1 && val > (*node)->right->val) {
-        *node = avl_left_rotate(*node);
+        *node = avl_lrotate(*node);
     }
 
     // Left Right Case
     else if (factor > 1 && val > (*node)->left->val) {
-        (*node)->left = avl_left_rotate((*node)->left);
-        *node = avl_right_rotate(*node);
+        (*node)->left = avl_lrotate((*node)->left);
+        *node = avl_rrotate(*node);
     }
 
     // Right Left Case
     else if (factor < -1 && val < (*node)->right->val) {
-        (*node)->right = avl_right_rotate((*node)->right);
-        *node = avl_left_rotate(*node);
+        (*node)->right = avl_rrotate((*node)->right);
+        *node = avl_lrotate(*node);
+    }
+}
+
+void avl_delete(AVLNode** node, int key) 
+{
+    if (*node == NULL) return;   
+
+    // Recur down the tree based on node values
+    if ((*node)->val < key) 
+    {
+        avl_delete(&((*node)->right), key);
+    }
+
+    else if ((*node)->val > key) 
+    {
+        avl_delete(&((*node)->left), key);
+    }
+
+    else if ((*node)->val == key) 
+    {
+        if (is_leaf(*node)) {
+            free(*node);
+            *node = NULL;
+        }
+
+        // If the node only has right child, then we replace the node with it
+        else if ((*node)->left == NULL) 
+        {
+            AVLNode* tmp = *node;
+            *node = (*node)->right;
+
+            free(tmp);
+        }
+
+        // Same but with the left child
+        else if ((*node)->right == NULL) 
+        {
+            AVLNode* tmp = *node;
+            *node = (*node)->left;
+
+            free(tmp);
+        }
+
+        else { 
+            AVLNode* successor = find_min((*node)->right);
+
+            (*node)->val = successor->val;
+            
+            // Delete successor (As it is now current node)
+            avl_delete(&((*node)->right), successor->val);
+        }
+    }
+
+    if (*node == NULL) return;   
+
+    // Post bst deletion operations.
+    int factor = balance_factor(*node);
+
+    // Left-Left case
+    if (factor > 1 && balance_factor((*node)->left) >= 0) 
+    {
+        *node = avl_rrotate(*node);
+    }
+
+    // Left-Right case
+    else if (factor > 1 && balance_factor((*node)->left) < 0) 
+    {
+        (*node)->left = avl_lrotate((*node)->left);
+        *node = avl_rrotate(*node);
+    }
+
+    // Right-Right case
+    else if (factor < -1 && balance_factor((*node)->right) <= 0) 
+    {
+        *node = avl_lrotate(*node);
+    }
+
+    // Right-Left case
+    else if (factor < -1 && balance_factor((*node)->right) > 0) 
+    {
+        (*node)->right = avl_rrotate((*node)->right);
+        *node = avl_lrotate(*node);
     }
 }
 

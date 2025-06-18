@@ -39,6 +39,12 @@ AVLNode* avl_right_rotate(AVLNode* r);
  */
 void avl_insert(AVLNode** node, int val);
 
+
+/*
+ * Recursively deletes node with given key (value)
+ */
+void avl_delete(AVLNode** node, int key);
+
 /* 
  * Prints tree using in order traversing
  */ 
