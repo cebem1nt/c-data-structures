@@ -28,6 +28,12 @@ Map* map_create();
  */
 void map_insert(Map* map, char* key, int val);
 
+
+/*
+ * Deletes item with given key
+ */
+void map_delete(Map* map, char* key);
+
 /*
  * Returns value with given key
  */

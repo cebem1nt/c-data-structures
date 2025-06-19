@@ -9,7 +9,7 @@ A repository with impleemntations of a bunch of different data structures. Use a
 - [ ] ~~Red-Black Tree~~ God no.
 - [ ] Sets (Sorted array based) 
 - [ ] Heap (min/max)
-- [ ] Map (tree based)
+- [x] Map (tree based)
 - [ ] Hashmap (Boss fight)
 - [ ] Hashset
 - [ ] Graphs (Hell, how is it working, I'm scared)

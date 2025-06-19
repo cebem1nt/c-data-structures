@@ -9,15 +9,13 @@
 #include <stdio.h>
 #include <string.h>
 
-MapNode* _create_node(char* key, int val) 
+MapNode* create_node(char* key, int val) 
 {
     MapNode* new = malloc(sizeof(MapNode));
 
     if (!new) {
         return NULL;
     }
-
-    new->val = val;
 
     // better coppy key instead of direct assignment
     new->key = malloc(strlen(key) + 1);
@@ -26,24 +24,23 @@ MapNode* _create_node(char* key, int val)
         free(new);
         return NULL;
     }
-
     strcpy(new->key, key);
 
-    // It should be equal to 0 or 1?
-    new->height = 1;
-
+    new->val = val;
+    // It's 0 in my implementation.
+    new->height = 0;
     new->right = NULL;
     new->left = NULL;
 
     return new;
 }
 
-int _max(int x, int y) 
+int max(int x, int y) 
 {
     return (x > y) ? x : y;
 }
 
-int _height(MapNode* tree) 
+int height(MapNode* tree) 
 {
     if (tree == NULL) {
         return 0;
@@ -51,28 +48,27 @@ int _height(MapNode* tree)
     return tree->height;
 }
 
-int _is_leaf(MapNode* node) 
+int is_leaf(MapNode* node) 
 {
     return node->left == NULL && node->right == NULL;
 }
 
-MapNode* _find_min(MapNode* node) {
+MapNode* find_min(MapNode* node) {
     while (node->left != NULL) {
         node = node->left;
     }
-
     return node;
 }
 
-int _factor(MapNode* tree) 
+int factor(MapNode* tree) 
 {
     if (tree == NULL) {
         return 0;
     }
-    return _height(tree->left) - _height(tree->right);
+    return height(tree->left) - height(tree->right);
 }
 
-MapNode* _rotatel(MapNode* r) 
+MapNode* rotatel(MapNode* r) 
 {
     // Example of an unbalanced tree 
     // that needs left rotate
@@ -92,17 +88,17 @@ MapNode* _rotatel(MapNode* r)
     r->right = T2;
     b->left = r;
     
-    r->height = 1 + _max(
-       _height(r->left), _height(r->right));
+    r->height = max(
+       height(r->left), height(r->right));
 
-    b->height = 1 + _max(
-       _height(b->left), _height(b->right));
+    b->height = max(
+       height(b->left), height(b->right));
 
     // Return pointer to new root
     return b;
 }
 
-MapNode* _rotater(MapNode* r) 
+MapNode* rotater(MapNode* r) 
 {
     // Example of an unbalanced tre  e 
     // that needs right rotate
@@ -122,17 +118,17 @@ MapNode* _rotater(MapNode* r)
     r->left = T2;
     b->right = r;
     
-    r->height = 1 + _max(
-       _height(r->left), _height(r->right));
+    r->height = max(
+       height(r->left), height(r->right));
 
-    b->height = 1 + _max(
-       _height(b->left), _height(b->right));
+    b->height = max(
+       height(b->left), height(b->right));
 
     // Return pointer to new root
     return b;
 }
 
-MapNode* _insert(MapNode* node, char* key, int val) 
+MapNode* insert(MapNode* node, char* key, int val) 
 {
     /*
      * AVL insertion function, but compare keys instead of values.
@@ -140,7 +136,7 @@ MapNode* _insert(MapNode* node, char* key, int val)
      */
 
     if (node == NULL) {
-        node = _create_node(key, val);
+        node = create_node(key, val);
         return node;
     }
 
@@ -152,11 +148,11 @@ MapNode* _insert(MapNode* node, char* key, int val)
     int cmp = strcmp(key, node->key);
 
     if (cmp < 0) {
-        node->left = _insert(node->left, key, val);
+        node->left = insert(node->left, key, val);
     }
 
     else if (cmp > 0) {
-        node->right = _insert(node->right, key, val);
+        node->right = insert(node->right, key, val);
     }
 
     // Update value of node in case of equality of keys
@@ -165,38 +161,122 @@ MapNode* _insert(MapNode* node, char* key, int val)
         return node;
     }
 
-    node->height = 1 + _max(
-        _height(node->left), _height(node->right));
+    node->height = max(
+        height(node->left), height(node->right));
 
-    int factor = _factor(node);
+    int bfactor = factor(node);
 
     // Left Left Case
-    if (factor > 1 && strcmp(key, node->left->key) < 0) {
-        return _rotater(node);
+    if (bfactor > 1 && strcmp(key, node->left->key) < 0) {
+        return rotater(node);
     }
 
     // Right Right Case
-    else if (factor < -1 && strcmp(key, node->right->key) > 0)
-        return _rotatel(node);
+    else if (bfactor < -1 && strcmp(key, node->right->key) > 0)
+        return rotatel(node);
 
     // Left Right Case
-    else if (factor > 1 && strcmp(key, node->left->key) > 0)
+    else if (bfactor > 1 && strcmp(key, node->left->key) > 0)
     {
-        node->left = _rotatel(node->left);
-        return _rotater(node);
+        node->left = rotatel(node->left);
+        return rotater(node);
     }
 
     // Right Left Case
-    else if (factor < -1 && strcmp(key, node->right->key) < 0)
+    else if (bfactor < -1 && strcmp(key, node->right->key) < 0)
     {
-        node->right = _rotater(node->right);
-        return _rotatel(node);
+        node->right = rotater(node->right);
+        return rotatel(node);
     }
 
     return node;
 }
 
-int* _find(MapNode* node, char* key) 
+MapNode* delete(MapNode* node, char* key) 
+{
+    if (node == NULL) return NULL;
+
+    int cmp = strcmp(key, node->key);
+
+    if (cmp < 0) 
+    {
+        node->left = delete(node->left, key);
+    }
+
+    else if (cmp > 0) 
+    {
+        node->right = delete(node->right, key);
+    }
+
+    else if (cmp == 0) 
+    {
+        if((node->left == NULL) || (node->right == NULL))
+        {
+            MapNode *tmp = node->left ? node->left : node->right;
+
+            // Leaf node case
+            if (tmp == NULL) {
+                tmp = node;
+                node = NULL;
+            }
+
+            else {
+                // replace current node with the child
+                *node = *tmp;
+            }
+
+            free(tmp);
+        }
+
+        // Both children.
+        else {
+            MapNode* successor = find_min(node->right);
+
+            node->key = successor->key;
+            node->val = successor->val;
+
+            // Delete successor (As it is now current node)
+            node->right = delete(node->right, successor->key);
+        }
+    }
+
+    if (node == NULL) return NULL;
+
+    int bfactor = factor(node);
+
+    node->height = max(
+        height(node->left), height(node->right));
+
+    // Left-Left case
+    if (bfactor > 1 && factor(node->left) >= 0) 
+    {
+        return rotater(node);
+    }
+
+    // Left-Right case
+    else if (bfactor > 1 && factor(node->left) < 0) 
+    {
+        node->left = rotatel(node->left);
+        return rotater(node);
+    }
+
+    // Right-Right case
+    else if (bfactor < -1 && factor(node->right) <= 0) 
+    {
+        return rotatel(node);
+    }
+
+    // Right-Left case
+    else if (bfactor < -1 && factor(node->right) > 0) 
+    {
+        node->right = rotater(node->right);
+        return rotatel(node);
+    }
+    
+    return node;
+}
+
+int* find(MapNode* node, char* key) 
 {
     if (node == NULL) return NULL;
 
@@ -207,22 +287,22 @@ int* _find(MapNode* node, char* key)
     }
 
     else if (cmp < 0) {
-        return _find(node->left, key);
+        return find(node->left, key);
     } 
     
     else if (cmp > 0) {
-        return _find(node->right, key);
+        return find(node->right, key);
     } 
 
     return NULL;
 }
 
-void _inorder(MapNode* root) 
+void inorder(MapNode* root) 
 {
     if (root != NULL) {
-        _inorder(root->left);
+        inorder(root->left);
         printf("\"%s\": %d \n", root->key, root->val);
-        _inorder(root->right);
+        inorder(root->right);
     }
 }
 
@@ -240,15 +320,20 @@ Map* map_create()
 
 void map_insert(Map* map, char* key, int val) 
 {
-    map->_tree = _insert(map->_tree, key, val);
+    map->_tree = insert(map->_tree, key, val);
+}
+
+void map_delete(Map* map, char* key) 
+{
+    map->_tree = delete(map->_tree, key);
 }
 
 int* map_get(Map* map, char* key) 
 {
-    return _find(map->_tree, key);
+    return find(map->_tree, key);
 }
 
 void map_print(Map* map) 
 {
-    _inorder(map->_tree);
+    inorder(map->_tree);
 }
