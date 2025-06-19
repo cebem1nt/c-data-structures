@@ -142,7 +142,7 @@ void avl_insert(AVLNode** node, int val)
     }
 
     // Update height
-    (*node)->height = 1 + max(
+    (*node)->height = max(
         avl_height((*node)->left), avl_height((*node)->right));
 
     int factor = balance_factor(*node);
@@ -226,6 +226,9 @@ void avl_delete(AVLNode** node, int key)
 
     // Post bst deletion operations.
     int factor = balance_factor(*node);
+
+    (*node)->height = max(
+        avl_height((*node)->left), avl_height((*node)->right));
 
     // Left-Left case
     if (factor > 1 && balance_factor((*node)->left) >= 0) 
