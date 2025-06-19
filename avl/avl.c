@@ -45,6 +45,15 @@ AVLNode* find_min(AVLNode* node) {
     return node;
 }
 
+AVLNode* find_max(AVLNode* node) {
+    while (node->right != NULL) {
+        node = node->right;
+    }
+
+    return node;
+}
+
+
 int balance_factor(AVLNode* tree) 
 {
     if (tree == NULL) {
@@ -53,7 +62,7 @@ int balance_factor(AVLNode* tree)
     return avl_height(tree->left) - avl_height(tree->right);
 }
 
-AVLNode* avl_lrotate(AVLNode* r) 
+AVLNode* avl_rotatel(AVLNode* r) 
 {
     // Example of an unbalanced tree 
     // that needs left rotate
@@ -83,7 +92,7 @@ AVLNode* avl_lrotate(AVLNode* r)
     return b;
 }
 
-AVLNode* avl_rrotate(AVLNode* r) 
+AVLNode* avl_rotater(AVLNode* r) 
 {
     // Example of an unbalanced tre  e 
     // that needs right rotate
@@ -142,24 +151,24 @@ void avl_insert(AVLNode** node, int val)
 
     // Left Left Case
     if (factor > 1 && val < (*node)->left->val) {
-        *node = avl_rrotate(*node);
+        *node = avl_rotater(*node);
     }
 
     // Right Right Case
     else if (factor < -1 && val > (*node)->right->val) {
-        *node = avl_lrotate(*node);
+        *node = avl_rotatel(*node);
     }
 
     // Left Right Case
     else if (factor > 1 && val > (*node)->left->val) {
-        (*node)->left = avl_lrotate((*node)->left);
-        *node = avl_rrotate(*node);
+        (*node)->left = avl_rotatel((*node)->left);
+        *node = avl_rotater(*node);
     }
 
     // Right Left Case
     else if (factor < -1 && val < (*node)->right->val) {
-        (*node)->right = avl_rrotate((*node)->right);
-        *node = avl_lrotate(*node);
+        (*node)->right = avl_rotater((*node)->right);
+        *node = avl_rotatel(*node);
     }
 }
 
@@ -221,28 +230,47 @@ void avl_delete(AVLNode** node, int key)
     // Left-Left case
     if (factor > 1 && balance_factor((*node)->left) >= 0) 
     {
-        *node = avl_rrotate(*node);
+        *node = avl_rotater(*node);
     }
 
     // Left-Right case
     else if (factor > 1 && balance_factor((*node)->left) < 0) 
     {
-        (*node)->left = avl_lrotate((*node)->left);
-        *node = avl_rrotate(*node);
+        (*node)->left = avl_rotatel((*node)->left);
+        *node = avl_rotater(*node);
     }
 
     // Right-Right case
     else if (factor < -1 && balance_factor((*node)->right) <= 0) 
     {
-        *node = avl_lrotate(*node);
+        *node = avl_rotatel(*node);
     }
 
     // Right-Left case
     else if (factor < -1 && balance_factor((*node)->right) > 0) 
     {
-        (*node)->right = avl_rrotate((*node)->right);
-        *node = avl_lrotate(*node);
+        (*node)->right = avl_rotater((*node)->right);
+        *node = avl_rotatel(*node);
     }
+}
+
+AVLNode* avl_find(AVLNode* node, int key) 
+{
+    if (node == NULL) return NULL;
+
+    if (node->val == key) {
+        return node;
+    }
+
+    else if (key > node->val) {
+        avl_find(node->right, key);
+    }
+
+    else if (key < node->val) {
+        avl_find(node->left, key);
+    }
+
+    return NULL;
 }
 
 void inorder(AVLNode* root) 

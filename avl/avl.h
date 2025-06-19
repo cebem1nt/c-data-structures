@@ -45,6 +45,13 @@ void avl_insert(AVLNode** node, int val);
  */
 void avl_delete(AVLNode** node, int key);
 
+
+/*
+ * Returns node with given value (key).
+ * NULL if no such node.
+ */
+AVLNode* avl_find(AVLNode* node, int key);
+
 /* 
  * Prints tree using in order traversing
  */ 
