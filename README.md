@@ -6,8 +6,8 @@ A repository with impleemntations of a bunch of different data structures. Use a
 - [x] Linked list
 - [x] Binary Search Tree (BST)
 - [x] AVL Tree
-- [ ] ~~Red-Black Tree~~ God no.
-- [ ] Sets (Sorted array based) 
+- [ ] Red-Black Tree
+- [ ] ~~Sets (Sorted array based)~~ Just use avl / rb tree. 
 - [ ] Heap (min/max)
 - [x] Map (tree based)
 - [ ] Hashmap (Boss fight)
