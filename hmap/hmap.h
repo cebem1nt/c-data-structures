@@ -2,6 +2,8 @@
 #define HMAP_H
 
 // TODO: Use union instead of void*
+#include <stddef.h>
+
 typedef struct Bucket {
     char* key;
     void* val;
@@ -9,8 +11,9 @@ typedef struct Bucket {
 } Bucket;
 
 typedef struct Hmap {
-    Bucket** buckets; // Array with buckets
-    int b_len; // Amount of buckets
+    Bucket** entries; // Array with buckets
+    size_t max_cap; // Max amount of buckets that can be stored
+    size_t size; // Amount of stored buckets
 } Hmap;
 
 /*
@@ -22,7 +25,7 @@ Hmap* hm_create();
  * Inserts new item with given key into given hasmap.
  * Overwrites item if already set.
  */
-void hm_insert(Hmap* m, char* key, void* val);
+void hm_set(Hmap* m, char* key, void* val);
 
 /*
  * Returns item with given key. 
