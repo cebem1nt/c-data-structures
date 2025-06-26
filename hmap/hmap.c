@@ -109,8 +109,8 @@ static void insert_bucket(
 
     // In case of collision, we'll set new entry as head.
     // That way we won't have to iterate all the way to the end.
-    new->next = b;
-    b = new;
+    new->next = entries[i];
+    entries[i] = new;
 }
 
 static void hm_expand(Hmap* m) 
