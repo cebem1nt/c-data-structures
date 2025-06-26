@@ -1,6 +1,10 @@
 /*
  * Implementation of a tree map using avl tree.
- * Danger! Code might be dumb! educational purpose only.
+ * 
+ * WARNING! 
+ * Educational purpose only and you're the only one responsible here.
+ * The following code might be dumb, incompetent, bla bla bla.
+ * Lower your expectations, and use or hate on your own. 
  */
 
 #include "map.h"
