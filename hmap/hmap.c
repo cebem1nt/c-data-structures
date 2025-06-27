@@ -13,7 +13,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 
 #include "hmap.h"
 
@@ -130,7 +129,7 @@ static void hm_expand(hmap* m)
     for (int i = 0; i < m->max_cap; i++) {
         hm_bucket* b = m->entries[i];
 
-        if (b->key != NULL) {
+        if (b != NULL && b->key != NULL) {
             insert_bucket(new_buckets, new_cap, b->key, &b->val);
         }
     }
@@ -143,8 +142,9 @@ static void hm_expand(hmap* m)
 
 void hm_set(hmap* m, char* key, void* val) 
 {
+    size_t cur_percent = (m->size * 100) / m->max_cap;
 
-    if (m->size >= m->max_cap / 2) {
+    if (cur_percent >= HM_RESIZE_PERCENT) {
         hm_expand(m);
     }
 

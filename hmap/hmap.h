@@ -4,6 +4,7 @@
 #include <stddef.h>
 
 #define HM_DEFAULT_CAP 16
+#define HM_RESIZE_PERCENT 70
 
 typedef struct hm_bucket {
     char* key;

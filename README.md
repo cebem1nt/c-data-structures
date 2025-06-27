@@ -6,13 +6,13 @@ A repository with impleemntations of a bunch of different data structures. Use a
 - [x] Linked list
 - [x] Binary Search Tree (BST)
 - [x] AVL Tree
-- [ ] Red-Black Tree
 - [ ] ~~Sets (Sorted array based)~~ Just use avl / rb tree. 
 - [ ] Heap (min/max)
 - [x] Map (tree based)
-- [ ] Hashmap (Boss fight)
+- [x] Hashmap 
 - [ ] Hashset
-- [ ] Graphs (Hell, how is it working, I'm scared)
+- [ ] Red-Black Tree (Real boss fight)
+- [ ] Graphs (Hell, how is it working, I'm scared) 
 
 ### Links:
 https://www.geeksforgeeks.org/top-data-structures-that-every-programmer-must-know/
