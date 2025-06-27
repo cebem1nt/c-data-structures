@@ -4,7 +4,7 @@
 
 int main() 
 {
-    Hmap* map = hm_create();
+    hmap* map = hm_create();
 
     float banananas = 2.10;
     int a = 1, b = 2, c = 3, d = 4;

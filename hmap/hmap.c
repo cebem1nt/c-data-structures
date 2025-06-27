@@ -1,5 +1,5 @@
 /*
- * Implementation of hashmap in c. 
+ * Implementation of hmap in c. 
  * Each bucket is a head of linked list.
  *
  * WARNING! 
@@ -16,8 +16,6 @@
 #include <stdbool.h>
 
 #include "hmap.h"
-
-#define HM_DEFAULT_CAP 16
 
 static void merror() 
 {
@@ -43,7 +41,8 @@ static uint32_t djb2(char* str)
 static size_t get_bucket_index(size_t cap, char* key) 
 {
     if (cap <= 0) {
-        return (size_t) -1; // Just in case
+        fprintf(stderr, "max_cap of hmap can not be 0.");
+        exit(132);
     }
 
     uint32_t hash = djb2(key);
@@ -52,14 +51,14 @@ static size_t get_bucket_index(size_t cap, char* key)
     return index;
 }
 
-static void free_buckets(Hmap* m) {
-    int i;
+static void free_buckets(hmap* m) {
+    size_t i;
 
     for (i = 0; i < m->max_cap; i++) {
-        Bucket* b = m->entries[i];
+        hm_bucket* b = m->entries[i];
         
         while (b != NULL) {
-            Bucket* next = b->next;
+            hm_bucket* next = b->next;
             free(b->key);
             free(b);
             b = next;
@@ -69,23 +68,23 @@ static void free_buckets(Hmap* m) {
     free(m->entries);
 }
 
-void hm_free(Hmap* m) 
+void hm_free(hmap* m) 
 {
     free_buckets(m);
     free(m);
 }
 
 static void insert_bucket(
-    Bucket** entries, int cap, char* key, void* val ) 
+    hm_bucket** buckets, size_t cap, char* key, void* val ) 
 {
     size_t i = get_bucket_index(cap, key);
-    Bucket* b = entries[i];
+    hm_bucket* b = buckets[i];
 
     // Each bucket is null by default so if
     // the bucket is empty, loop will be omited
     while (b != NULL) {
-        // If there is item with such a key, overwrite it.
         if (strcmp(b->key, key) == 0) {
+            // If there is item with such a key, overwrite it.
             b->val = val;
             return;
         }
@@ -93,7 +92,7 @@ static void insert_bucket(
     }
 
     // No such entry, creating new one.
-    Bucket* new = malloc(sizeof(Bucket));
+    hm_bucket* new = malloc(sizeof(hm_bucket));
 
     if (new == NULL) {
         merror();
@@ -109,11 +108,11 @@ static void insert_bucket(
 
     // In case of collision, we'll set new entry as head.
     // That way we won't have to iterate all the way to the end.
-    new->next = entries[i];
-    entries[i] = new;
+    new->next = buckets[i];
+    buckets[i] = new;
 }
 
-static void hm_expand(Hmap* m) 
+static void hm_expand(hmap* m) 
 {
     size_t new_cap = m->max_cap * 2;
     
@@ -122,14 +121,14 @@ static void hm_expand(Hmap* m)
         merror();
     }
 
-    Bucket** new_buckets = calloc(new_cap, sizeof(Bucket*));
+    hm_bucket** new_buckets = calloc(new_cap, sizeof(hm_bucket*));
     
     if (new_buckets == NULL) {
         merror();
     }
 
     for (int i = 0; i < m->max_cap; i++) {
-        Bucket* b = m->entries[i];
+        hm_bucket* b = m->entries[i];
 
         if (b->key != NULL) {
             insert_bucket(new_buckets, new_cap, b->key, &b->val);
@@ -142,7 +141,7 @@ static void hm_expand(Hmap* m)
     m->max_cap = new_cap;
 }
 
-void hm_set(Hmap* m, char* key, void* val) 
+void hm_set(hmap* m, char* key, void* val) 
 {
 
     if (m->size >= m->max_cap / 2) {
@@ -153,10 +152,10 @@ void hm_set(Hmap* m, char* key, void* val)
     m->size++;
 }
 
-void* hm_get(Hmap* m, char* key)
+void* hm_get(hmap* m, char* key)
 {
     size_t i = get_bucket_index(m->max_cap, key);
-    Bucket* b = m->entries[i];
+    hm_bucket* b = m->entries[i];
 
     while (b != NULL) {
         if (strcmp(b->key, key) == 0) {
@@ -169,28 +168,28 @@ void* hm_get(Hmap* m, char* key)
     return NULL;
 }
 
-void hm_del(Hmap* m, char* key) 
+void hm_del(hmap* m, char* key) 
 {
     size_t i = get_bucket_index(m->max_cap, key);
 
-    Bucket* b = m->entries[i];
-    Bucket* prev = NULL;
+    hm_bucket* b = m->entries[i];
+    hm_bucket* prev = NULL;
 
     while (b != NULL) {
-        if (strcmp(b->key, key) == 0) {
-            // If the node is head
+        if (strcmp(b->key, key) == 0) 
+        {
             if (prev == NULL) {
+                // The node is head
                 m->entries[i] = b->next;
-            } 
-            // Node is somewhere in the middle or tail
-            else {
+            } else {
+                // Node is somewhere in the middle or tail
                 prev->next = b->next;
             }
 
             free(b->key);
             free(b);
 
-            m->size --;
+            m->size--;
             
             return;
         }
@@ -201,15 +200,15 @@ void hm_del(Hmap* m, char* key)
 
 }
 
-Hmap* hm_create() 
+struct hmap* hm_create() 
 {
-    Hmap* new = malloc(sizeof(Hmap));
+    hmap* new = malloc(sizeof(hmap));
 
     if (new == NULL) {
         merror();
     }
 
-    new->entries = calloc(HM_DEFAULT_CAP, sizeof(Bucket*));
+    new->entries = calloc(HM_DEFAULT_CAP, sizeof(hm_bucket*));
 
     if (new->entries == NULL) {
         merror();
