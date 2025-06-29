@@ -2,46 +2,48 @@
 #define MAP_H
 
 // AVL tree node with key attribute
-typedef struct MapNode {
+typedef struct m_node {
     char* key;
     int val;
     int height;
 
-    struct MapNode* right;
-    struct MapNode* left;
-} MapNode ;
+    struct m_node* right;
+    struct m_node* left;
+} m_node ;
 
-typedef struct Map {
+struct map {
     // int size; // better not for now
-    MapNode* _tree;
-} Map;
+    m_node* _tree;
+};
+
+typedef struct map map;
 
 /*
  * Creates new empty map.
  * Returns NULL in case of memory problems
  */
-Map* map_create();
+struct map* map_create();
 
 /*
  * Inserts new "key: value" pair to the given map
  * Rewrites value with given if there were such a pair before
  */
-void map_insert(Map* map, char* key, int val);
+void map_set(map* m, char* key, int val);
 
 
 /*
  * Deletes item with given key
  */
-void map_delete(Map* map, char* key);
+void map_del(map* m, char* key);
 
 /*
  * Returns value with given key
  */
-int* map_get(Map* map, char* key);
+int* map_get(map* m, char* key);
 
 /*
  * Prints given map
  */
-void map_print(Map* map);
+void map_print(map* m);
 
 #endif
