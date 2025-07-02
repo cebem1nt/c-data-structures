@@ -4,38 +4,38 @@
 
 #include "linkedlist.h"
 
-LinkedList* create_linkedlist() 
+struct l_list* create_linkedlist() 
 {
-    LinkedList* new_linked_list = malloc(sizeof(LinkedList));
+    l_list* new = malloc(sizeof(l_list));
     
-    if (!new_linked_list) {
+    if (!new) {
         return NULL;
     }
 
-    new_linked_list->head = NULL;
-    new_linked_list->tail = NULL;
-    new_linked_list->size = 0;
+    new->head = NULL;
+    new->tail = NULL;
+    new->size = 0;
 
-    return new_linked_list;
+    return new;
 }
 
-Node* create_node(int val) 
+struct ll_node* create_node(int val) 
 {
-    Node* new_node = malloc(sizeof(Node));
+    ll_node* new = malloc(sizeof(ll_node));
     
-    if (!new_node) {
+    if (!new) {
         return NULL;
     }
 
-    new_node->val = val;
-    new_node->next = NULL;
+    new->val = val;
+    new->next = NULL;
 
-    return new_node;
+    return new;
 }
 
-void append_node(LinkedList* list, int val) 
+void append_node(l_list* list, int val) 
 {
-    Node* new_node = create_node(val);
+    ll_node* new_node = create_node(val);
 
     if (list->tail) {
         list->tail->next = new_node;
@@ -48,9 +48,9 @@ void append_node(LinkedList* list, int val)
     list->size++;
 }
 
-void prepend_node(LinkedList* list, int val) 
+void prepend_node(l_list* list, int val) 
 {
-    Node* new_node = create_node(val);
+    ll_node* new_node = create_node(val);
 
     if (list->head) {
         new_node->next = list->head;
@@ -63,14 +63,14 @@ void prepend_node(LinkedList* list, int val)
     list->size++;
 }
 
-int delete_node(LinkedList* list, int index) 
+int delete_node(l_list* list, int index) 
 {
     if (index < 0 || index > list->size - 1) {
         return 1;
     }
 
     if (index == 0) {
-        Node* tmpn = list->head;
+        ll_node* tmpn = list->head;
         list->head = list->head->next;
 
         if (list->head == NULL) {
@@ -79,13 +79,13 @@ int delete_node(LinkedList* list, int index)
 
         free(tmpn);
     } else {
-        Node* current = list->head;
+        ll_node* current = list->head;
 
         for (int i = 0; i < index-1 ; i++) {
             current = current->next;
         }
 
-        Node* tmpn = current->next;
+        ll_node* tmpn = current->next;
         current->next = current->next->next;
 
         if (current->next == NULL) {
@@ -99,9 +99,9 @@ int delete_node(LinkedList* list, int index)
     return 0;
 }
 
-Node* find_node_by_value(LinkedList* list, int val) 
+struct ll_node* find_node_by_value(l_list* list, int val) 
 {
-    Node* current = list->head;
+    ll_node* current = list->head;
 
     while (current) {
         if (current->val == val) {
@@ -114,9 +114,9 @@ Node* find_node_by_value(LinkedList* list, int val)
     return NULL;
 }
 
-Node* get_node_by_index(LinkedList* list, int index) 
+struct ll_node* get_node_by_index(l_list* list, int index) 
 {
-    Node* current = list->head;
+    ll_node* current = list->head;
     int i = 0;
 
     if (index < 0) {
@@ -135,9 +135,9 @@ Node* get_node_by_index(LinkedList* list, int index)
     return NULL;
 }
 
-void print_linkedlist(LinkedList* list) 
+void print_linkedlist(l_list* list) 
 {
-    Node* current = list->head;
+    ll_node* current = list->head;
 
     for (int i = 0; i < list->size; i++) {
         printf("%d -> ", current->val);
@@ -146,9 +146,9 @@ void print_linkedlist(LinkedList* list)
     printf("\n");
 }
 
-void free_linkedlist(LinkedList* list) 
+void free_linkedlist(l_list* list) 
 {
-    Node* current = list->head;
+    ll_node* current = list->head;
 
     while (list->size > 0) {
         delete_node(list, 0);
