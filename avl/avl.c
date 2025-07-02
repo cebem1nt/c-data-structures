@@ -1,17 +1,18 @@
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "avl.h"
 
-AVLNode* avl_create_node(int val) 
+struct avl_node* avl_create_node(int val) 
 {
-    AVLNode* new_node = malloc(sizeof(AVLNode));
+    avl_node* new_node = malloc(sizeof(avl_node));
 
     if (!new_node) {
         return NULL;
     }
 
     new_node->val = val;
-    new_node->height = 0;
+    new_node->height = 1;
 
     new_node->right = NULL;
     new_node->left = NULL;
@@ -19,25 +20,17 @@ AVLNode* avl_create_node(int val)
     return new_node;
 }
 
-int max(int x, int y) 
+static int max(int x, int y) 
 {
     return (x > y) ? x : y;
 }
 
-int avl_height(AVLNode* tree) 
+static bool is_leaf(avl_node* node) 
 {
-    if (tree == NULL) {
-        return 0;
-    }
-    return tree->height;
+    return (node->left == NULL) && (node->right == NULL);
 }
 
-int is_leaf(AVLNode* node) 
-{
-    return node->left == NULL && node->right == NULL;
-}
-
-AVLNode* find_min(AVLNode* node) {
+struct avl_node* avl_get_min(avl_node* node) {
     while (node->left != NULL) {
         node = node->left;
     }
@@ -45,7 +38,7 @@ AVLNode* find_min(AVLNode* node) {
     return node;
 }
 
-AVLNode* find_max(AVLNode* node) {
+struct avl_node* avl_get_max(avl_node* node) {
     while (node->right != NULL) {
         node = node->right;
     }
@@ -53,16 +46,25 @@ AVLNode* find_max(AVLNode* node) {
     return node;
 }
 
-
-int balance_factor(AVLNode* tree) 
+int avl_height(avl_node* tree) 
 {
     if (tree == NULL) {
         return 0;
     }
+
+    return tree->height;
+}
+
+int8_t balance_factor(avl_node* tree) 
+{
+    if (tree == NULL) {
+        return 0;
+    }
+
     return avl_height(tree->left) - avl_height(tree->right);
 }
 
-AVLNode* avl_rotatel(AVLNode* r) 
+avl_node* avl_rotatel(avl_node* r) 
 {
     // Example of an unbalanced tree 
     // that needs left rotate
@@ -76,23 +78,23 @@ AVLNode* avl_rotatel(AVLNode* r)
      *      TN  N    // b is new root, 
      */             // tree is balanced
 
-    AVLNode* b = r->right;
-    AVLNode* T2 = b->left;
+    avl_node* b = r->right;
+    avl_node* T2 = b->left;
 
     r->right = T2;
     b->left = r;
     
-    r->height = max(
+    r->height = 1 + max(
        avl_height(r->left), avl_height(r->right));
 
-    b->height = max(
+    b->height = 1 + max(
        avl_height(b->left), avl_height(b->right));
 
     // Return pointer to new root
     return b;
 }
 
-AVLNode* avl_rotater(AVLNode* r) 
+avl_node* avl_rotater(avl_node* r) 
 {
     // Example of an unbalanced tre  e 
     // that needs right rotate
@@ -106,23 +108,23 @@ AVLNode* avl_rotater(AVLNode* r)
      *  TN  N        // b is new root, 
      */             // tree is balanced
 
-    AVLNode* b = r->left;
-    AVLNode* T2 = b->right;
+    avl_node* b = r->left;
+    avl_node* T2 = b->right;
 
     r->left = T2;
     b->right = r;
     
-    r->height = max(
+    r->height = 1 + max(
        avl_height(r->left), avl_height(r->right));
 
-    b->height = max(
+    b->height = 1 + max(
        avl_height(b->left), avl_height(b->right));
 
     // Return pointer to new root
     return b;
 }
 
-void avl_insert(AVLNode** node, int val) 
+void avl_insert(avl_node** node, int val) 
 {
     // WARNING! UGLY CODE! Do something.
 
@@ -142,7 +144,7 @@ void avl_insert(AVLNode** node, int val)
     }
 
     // Update height
-    (*node)->height = max(
+    (*node)->height = 1 + max(
         avl_height((*node)->left), avl_height((*node)->right));
 
     int factor = balance_factor(*node);
@@ -172,7 +174,7 @@ void avl_insert(AVLNode** node, int val)
     }
 }
 
-void avl_delete(AVLNode** node, int key) 
+void avl_delete(avl_node** node, int key) 
 {
     if (*node == NULL) return;   
 
@@ -197,7 +199,7 @@ void avl_delete(AVLNode** node, int key)
         // If the node only has right child, then we replace the node with it
         else if ((*node)->left == NULL) 
         {
-            AVLNode* tmp = *node;
+            avl_node* tmp = *node;
             *node = (*node)->right;
 
             free(tmp);
@@ -206,14 +208,14 @@ void avl_delete(AVLNode** node, int key)
         // Same but with the left child
         else if ((*node)->right == NULL) 
         {
-            AVLNode* tmp = *node;
+            avl_node* tmp = *node;
             *node = (*node)->left;
 
             free(tmp);
         }
 
         else { 
-            AVLNode* successor = find_min((*node)->right);
+            avl_node* successor = avl_get_min((*node)->right);
 
             (*node)->val = successor->val;
             
@@ -225,10 +227,10 @@ void avl_delete(AVLNode** node, int key)
     if (*node == NULL) return;   
 
     // Post bst deletion operations.
-    int factor = balance_factor(*node);
-
-    (*node)->height = max(
+    (*node)->height = 1 + max(
         avl_height((*node)->left), avl_height((*node)->right));
+    
+    int factor = balance_factor(*node);
 
     // Left-Left case
     if (factor > 1 && balance_factor((*node)->left) >= 0) 
@@ -257,7 +259,7 @@ void avl_delete(AVLNode** node, int key)
     }
 }
 
-AVLNode* avl_find(AVLNode* node, int key) 
+avl_node* avl_find(avl_node* node, int key) 
 {
     if (node == NULL) return NULL;
 
@@ -276,7 +278,7 @@ AVLNode* avl_find(AVLNode* node, int key)
     return NULL;
 }
 
-void inorder(AVLNode* root) 
+void inorder(avl_node* root) 
 {
     if (root != NULL) {
         inorder(root->left);

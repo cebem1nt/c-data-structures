@@ -3,7 +3,7 @@
 
 int main() 
 {
-    AVLNode* tree = avl_create_node(10);
+    avl_node* tree = avl_create_node(10);
 
     avl_insert(&tree, 31);
     avl_insert(&tree, 12);
