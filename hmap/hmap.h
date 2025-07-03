@@ -3,7 +3,9 @@
 
 #include <stddef.h>
 
+// Default capacity for new hmap
 #define HM_DEFAULT_CAP 16
+// Occupancy percentage that hashmap has to reach to be resized
 #define HM_RESIZE_PERCENT 70
 
 typedef struct hm_bucket {
@@ -28,8 +30,9 @@ struct hmap* hm_create();
 /*
  * Inserts new item with given key into given hasmap.
  * Overwrites item if already set.
+ * Returns 1 in case of mem errors
  */
-void hm_set(hmap* m, char* key, void* val);
+int hm_set(hmap* m, char* key, void* val);
 
 /*
  * Returns item with given key. 
@@ -39,8 +42,9 @@ void* hm_get(hmap* m, char* key);
 
 /*
  * Deletes item with given key.
+ * Returns 1 if item was not deleted, 0 otherwise
  */
-void hm_del(hmap* m, char* key);
+int hm_del(hmap* m, char* key);
 
 /*
  * Frees all entries of hashmap and 

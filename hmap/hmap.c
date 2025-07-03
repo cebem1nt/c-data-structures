@@ -16,12 +16,6 @@
 
 #include "hmap.h"
 
-static void merror() 
-{
-    fprintf(stderr, "Out of memory.");
-    exit(12); // ENOMEM
-}
-
 // Hash generating using djb2 hash alghorithm
 static uint32_t djb2(char* str) 
 {
@@ -40,7 +34,7 @@ static uint32_t djb2(char* str)
 static size_t get_bucket_index(size_t cap, char* key) 
 {
     if (cap <= 0) {
-        fprintf(stderr, "max_cap of hmap can not be 0.");
+        fprintf(stderr, "ERROR! 'max_cap' of hmap can not be 0.");
         exit(132);
     }
 
@@ -67,17 +61,10 @@ static void free_buckets(hmap* m) {
     free(m->entries);
 }
 
-void hm_free(hmap* m) 
+static int insert_bucket(
+    hm_bucket** buckets, size_t index, char* key, void* val ) 
 {
-    free_buckets(m);
-    free(m);
-}
-
-static void insert_bucket(
-    hm_bucket** buckets, size_t cap, char* key, void* val ) 
-{
-    size_t i = get_bucket_index(cap, key);
-    hm_bucket* b = buckets[i];
+    hm_bucket* b = buckets[index];
 
     // Each bucket is null by default so if
     // the bucket is empty, loop will be omited
@@ -85,7 +72,7 @@ static void insert_bucket(
         if (strcmp(b->key, key) == 0) {
             // If there is item with such a key, overwrite it.
             b->val = val;
-            return;
+            return 0;
         }
         b = b->next;
     }
@@ -94,36 +81,37 @@ static void insert_bucket(
     hm_bucket* new = malloc(sizeof(hm_bucket));
 
     if (new == NULL) {
-        merror();
+        return 1;
     }
 
     new->key = strdup(key);
    
     if (new->key == NULL) {
-        merror();
+        return 1;
     }
    
     new->val = val;
 
     // In case of collision, we'll set new entry as head.
     // That way we won't have to iterate all the way to the end.
-    new->next = buckets[i];
-    buckets[i] = new;
+    new->next = buckets[index];
+    buckets[index] = new;
+    return 0;
 }
 
-static void hm_expand(hmap* m) 
+static int hm_expand(hmap* m) 
 {
     size_t new_cap = m->max_cap * 2;
     
     if (new_cap < m->max_cap) {
         // Overflow, too big map.
-        merror();
+        return 1;
     }
 
     hm_bucket** new_buckets = calloc(new_cap, sizeof(hm_bucket*));
     
     if (new_buckets == NULL) {
-        merror();
+        return 1;
     }
 
     for (int i = 0; i < m->max_cap; i++) {
@@ -138,18 +126,31 @@ static void hm_expand(hmap* m)
     free_buckets(m);
     m->entries = new_buckets;
     m->max_cap = new_cap;
+    return 0;
 }
 
-void hm_set(hmap* m, char* key, void* val) 
+int hm_set(hmap* m, char* key, void* val) 
 {
-    size_t cur_percent = (m->size * 100) / m->max_cap;
+    size_t cap_percent, index;
+    int expand_err, 
+        insert_err;
 
-    if (cur_percent >= HM_RESIZE_PERCENT) {
-        hm_expand(m);
+    cap_percent = (m->size * 100) / m->max_cap;
+
+    if (cap_percent >= HM_RESIZE_PERCENT) {
+        expand_err = hm_expand(m);
+        if (expand_err) return 1;
     }
 
-    insert_bucket(m->entries, m->max_cap, key, val);
+    index = get_bucket_index(m->max_cap, key);
+    insert_err = insert_bucket(m->entries, index, key, val);
+
+    if (insert_err) {
+        return 1;
+    }
+
     m->size++;
+    return 0;
 }
 
 void* hm_get(hmap* m, char* key)
@@ -168,7 +169,7 @@ void* hm_get(hmap* m, char* key)
     return NULL;
 }
 
-void hm_del(hmap* m, char* key) 
+int hm_del(hmap* m, char* key) 
 {
     size_t i = get_bucket_index(m->max_cap, key);
 
@@ -191,13 +192,14 @@ void hm_del(hmap* m, char* key)
 
             m->size--;
             
-            return;
+            return 0;
         }
 
         prev = b;
         b = b->next;
     }
 
+    return 1;
 }
 
 struct hmap* hm_create() 
@@ -205,17 +207,23 @@ struct hmap* hm_create()
     hmap* new = malloc(sizeof(hmap));
 
     if (new == NULL) {
-        merror();
+        return NULL;
     }
 
     new->entries = calloc(HM_DEFAULT_CAP, sizeof(hm_bucket*));
 
     if (new->entries == NULL) {
-        merror();
+        return NULL;
     }
 
     new->max_cap = HM_DEFAULT_CAP;
     new->size = 0;
 
     return new;
+}
+
+void hm_free(hmap* m) 
+{
+    free_buckets(m);
+    free(m);
 }
