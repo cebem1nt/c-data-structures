@@ -41,7 +41,7 @@ struct map* init()
     map_set(map, "a", &value_a, sizeof(int));
     map_set(map, "b", &value_b, sizeof(int));
     map_set(map, "c", &value_c, sizeof(int));
-    print_tree(map->_tree);
+    print_tree(map->__tree);
     printf("\n\n");
 
     // Test right-right case
@@ -51,27 +51,28 @@ struct map* init()
     map_set(map, "c", &value_c2, sizeof(int));
     map_set(map, "b", &value_b2, sizeof(int));
     map_set(map, "a", &value_a2, sizeof(int));
-    print_tree(map->_tree);
+    print_tree(map->__tree);
     printf("\n\n");
 
     // Test left-right case
     map_free(map);
     map = map_create();
-    int value_a3 = 1, value_c3 = 3, value_b3 = 2;
-    map_set(map, "a", &value_a3, sizeof(int));
-    map_set(map, "c", &value_c3, sizeof(int));
-    map_set(map, "b", &value_b3, sizeof(int));
-    print_tree(map->_tree);
+    char *value_a3 = "str11", *value_c3 = "str22", *value_b3 = "str33";
+    map_set_s(map, value_a3, value_a3);
+    map_set_s(map, value_c3, value_c3);
+    map_set_s(map, value_b3, value_b3);
+    print_tree(map->__tree);
     printf("\n\n");
 
     // Test right-left case
     map_free(map);
     map = map_create();
-    int value_c4 = 3, value_a4 = 1, value_b4 = 2;
-    map_set(map, "c", &value_c4, sizeof(int));
-    map_set(map, "a", &value_a4, sizeof(int));
-    map_set(map, "b", &value_b4, sizeof(int));
-    print_tree(map->_tree);
+    float value_c4 = 3.14, value_a4 = 1.12, value_b4 = 2.2;
+
+    map_set_f(map, "c", &value_c4);
+    map_set_f(map, "a", &value_a4);
+    map_set_f(map, "b", &value_b4);
+    print_tree(map->__tree);
     printf("\n\n");
 
     // Test deletion
@@ -79,17 +80,14 @@ struct map* init()
     map = map_create();
 
     int value_a5 = 1, value_b5 = 2, value_c5 = 3;
-    map_set(map, "a", &value_a5, sizeof(int));
-    map_set(map, "b", &value_b5, sizeof(int));
-    map_set(map, "c", &value_c5, sizeof(int));
+    map_set_i(map, "a", &value_a5);
+    map_set_i(map, "b", &value_b5);
+    map_set_i(map, "c", &value_c5);
     map_del(map, "b");
 
-    print_tree(map->_tree);
+    print_tree(map->__tree);
     printf("\n\n");
 
-    int* a = map_get(map, "a");
-
-    printf("%i", *a);
     return map;
 }
 
@@ -103,7 +101,7 @@ int main() {
         map_set(map, key, &i, sizeof(int));
     }
 
-    print_tree(map->_tree);
+    print_tree(map->__tree);
     printf("\n\n");
 
 
@@ -114,7 +112,7 @@ int main() {
     }
 
     printf("root: ");
-    print_tree(map->_tree);
+    print_tree(map->__tree);
 
     // Test on accessing "expired" values
     int* stored = map_get(map, "a");

@@ -15,6 +15,45 @@
 
 #include "map.h"
 
+/*
+ * Sets key to given node.
+ * Returns 1 in case of errs
+ */
+static int n_set_key(m_node* n, char* key) 
+{
+    // Key must not be null
+    if (key == NULL) return 1; 
+
+    size_t len = strlen(key);
+    n->key = malloc(len + 1);
+
+    if (n->key == NULL) {
+        return 1;
+    }
+
+    strncpy(n->key, key, len);
+    n->key[len] = '\0';
+
+    return 0;
+}
+
+/*
+ * Sets value to given node.
+ * Returns 1 in case of errs
+ */
+static int n_set_val(m_node* n, void* val, size_t val_size) 
+{
+    n->val = malloc(val_size);
+    
+    if (n->val == NULL) {
+        return 1;
+    }
+
+    memcpy(n->val, val, val_size);
+
+    return 0;
+}
+
 static m_node* create_node(char* key, void* val, size_t val_size) 
 {
     m_node* new = malloc(sizeof(m_node));
@@ -23,30 +62,41 @@ static m_node* create_node(char* key, void* val, size_t val_size)
         return NULL;
     }
 
-    new->key = malloc(strlen(key) + 1);
-
-    if (new->key == NULL) {
-        free(new);
-        return NULL;
-    }
-
-    strcpy(new->key, key);
+    if (n_set_key(new, key)) return NULL;
+    if (n_set_val(new, val, val_size)) return NULL;
     
-    new->val = malloc(val_size);
-    
-    if (new->val == NULL) {
-        free(new);
-        free(new->key);
-        return NULL;
-    }
-
-    memcpy(new->val, val, val_size);
-
     new->right = NULL;
     new->left = NULL;
 
     new->height = 1;
+    new->val_size = val_size;
+
     return new;
+}
+
+static void free_node(m_node* node) 
+{
+    if (node == NULL) return;
+
+    free(node->key);
+    free(node->val);
+
+    free(node);
+}
+
+static void free_tree(m_node* node) 
+{
+    if (node != NULL) {
+        free_tree(node->left);
+        free_tree(node->right);
+        
+        free_node(node);
+    }
+}
+
+static int max(int x, int y) 
+{
+    return (x > y) ? x : y;
 }
 
 /*Returns height of given subtree*/
@@ -55,11 +105,8 @@ static int get_height(m_node* tree)
     if (tree == NULL) {
         return 0;
     }
-    return tree->height;
-}
 
-static int max(int x, int y) {
-    return (x > y) ? x : y;
+    return tree->height;
 }
 
 /*Updates height for given subtree*/
@@ -79,18 +126,21 @@ static int8_t balance_factor(m_node* tree)
     if (tree == NULL) {
         return 0;
     }
+
     return get_height(tree->left) - get_height(tree->right);
 }
 
 static bool is_leaf(m_node* node) 
 {
-    return node->left == NULL && node->right == NULL;
+    return (node->left == NULL) && (node->right == NULL);
 }
 
-static m_node* find_min(m_node* node) {
+static m_node* get_min(m_node* node) 
+{
     while (node->left != NULL) {
         node = node->left;
     }
+
     return node;
 }
 
@@ -156,6 +206,11 @@ static m_node* insert(m_node* node, char* key, void* val, size_t val_size)
 {
     if (node == NULL) {
         node = create_node(key, val, val_size);
+
+        if (node == NULL) {
+            fprintf(stderr, "m_node* insert(): Warning! newly created node is NULL\n");
+        }
+
         return node;
     }
 
@@ -175,20 +230,18 @@ static m_node* insert(m_node* node, char* key, void* val, size_t val_size)
         node->right = insert(node->right, key, val, val_size);
     }
 
+    // Equality of keys, meaning we have to overwrite it.
     else {
-        free(node->val);
-        node->val = malloc(val_size);
-
-        if (node->val != NULL) {
-            memcpy(node->val, val, val_size); 
-        }
+        free(node->val); // Free previous value
+        n_set_val(node, val, val_size); // Set new one
 
         return node;
     }
 
-    update_height(node);
+    update_height(node); // Upadte height of node after insertion
     int8_t bfactor = balance_factor(node);
 
+    // Left heavy cases
     if (bfactor > 1) 
     {
         if (strcmp(key, node->left->key) > 0) 
@@ -199,6 +252,7 @@ static m_node* insert(m_node* node, char* key, void* val, size_t val_size)
         return rotater(node);
     }
 
+    // Right heavy cases
     else if (bfactor < -1) 
     {
         if (strcmp(key, node->right->key) < 0) 
@@ -212,59 +266,73 @@ static m_node* insert(m_node* node, char* key, void* val, size_t val_size)
     return node;
 }
 
-
 static m_node* delete(m_node* node, char* key) 
 {
     if (node == NULL) return NULL;
 
     int cmp = strcmp(key, node->key);
 
-    if (cmp < 0) 
-    {
+    if (cmp < 0) {
         node->left = delete(node->left, key);
     }
 
-    else if (cmp > 0) 
-    {
+    else if (cmp > 0) {
         node->right = delete(node->right, key);
     }
 
-    else 
-    {
-        if( (node->left == NULL) || (node->right == NULL) )
+    else {
+        // Element found, deleting it
+        // Lookin on has it only one child or no child at all (leaf)
+        if((node->left == NULL) || (node->right == NULL))
         {
             m_node* tmp = node->left ? node->left 
                                      : node->right;
 
             // Leaf node case
             if (tmp == NULL) {
-                free(node);
+                free_node(node);
                 return NULL;
             }
 
             else {
-                *node = *tmp; // replace current node with the child
-                free(tmp);
+                // Free old key & val
+                free(node->key);
+                free(node->val);
+
+                // Set key & val to their new values
+                n_set_key(node, tmp->key);
+                n_set_val(node, tmp->val, tmp->val_size);
+
+                // Free the temporary node
+                free_node(tmp);
             }
         }
 
-        // Both children.
         else {
-            m_node* successor = find_min(node->right);
+            // Both children.
+            m_node* successor = get_min(node->right);
 
-            node->key = successor->key;
-            node->val = successor->val;
+            // Replace current node's key and value with the successor's
+            free(node->key);
+            free(node->val);
+
+            n_set_key(node, key);
+            n_set_val(node, successor->val, successor->val_size);
 
             // Delete successor (As it is now current node)
             node->right = delete(node->right, successor->key);
         }
     }
 
+    // If the node is NULL after deletion, No need to balance 
     if (node == NULL) return NULL;
+
+    // Rebalancing tree after deletion
 
     update_height(node);
     int8_t bfactor = balance_factor(node);
 
+    // Left heavy cases
     if (bfactor > 1) 
     {
         if (balance_factor(node->left) < 0) 
@@ -275,6 +343,7 @@ static m_node* delete(m_node* node, char* key)
         return rotater(node);
     }
 
+    // Right heavy cases
     else if (bfactor < -1) 
     {
         if (balance_factor(node->right) > 0) 
@@ -287,7 +356,6 @@ static m_node* delete(m_node* node, char* key)
     
     return node;
 }
-
 
 static void* find(m_node* node, char* key) 
 {
@@ -319,20 +387,6 @@ static int get_size(m_node* node, int s)
     return 1 + get_size(node->right, s) + get_size(node->left, s);
 }
 
-static void tree_free(m_node* node) 
-{
-    if (node != NULL) {
-        tree_free(node->left);
-        tree_free(node->right);
-        
-        free(node->key);
-        free(node->val);
-        
-        free(node);
-    }
-}
-
-
 struct map* map_create() 
 {
     map* new = malloc(sizeof(map));
@@ -341,31 +395,32 @@ struct map* map_create()
         return NULL;
     }
 
-    new->_tree = NULL;
+    new->__tree = NULL;
     return new;
 }
 
 void map_set(map* m, char* key, void* val, size_t val_size) 
 {
-    m->_tree = insert(m->_tree, key, val, val_size);
+    m->__tree = insert(m->__tree, key, val, val_size);
 }
 
 void map_del(map* m, char* key) 
 {
-    m->_tree = delete(m->_tree, key);
+    m->__tree = delete(m->__tree, key);
 }
 
 void map_free(map* m)
 {
-    tree_free(m->_tree);
+    free_tree(m->__tree);
     free(m);
 }
 
-int map_size(map* m) {
-    return get_size(m->_tree, 0);
+int map_size(map* m) 
+{
+    return get_size(m->__tree, 0);
 }
 
 void* map_get(map* m, char* key) 
 {
-    return find(m->_tree, key);
+    return find(m->__tree, key);
 }
