@@ -2,9 +2,11 @@
 #define MAP_H
 
 // AVL tree node with key attribute
+#include <stddef.h>
+
 typedef struct m_node {
     char* key;
-    int val;
+    void* val;
     int height;
 
     struct m_node* right;
@@ -28,8 +30,7 @@ struct map* map_create();
  * Inserts new "key: value" pair to the given map
  * Rewrites value with given if there were such a pair before
  */
-void map_set(map* m, char* key, int val);
-
+void map_set(map* m, char* key, void* val, size_t val_size);
 
 /*
  * Deletes item with given key
@@ -39,11 +40,14 @@ void map_del(map* m, char* key);
 /*
  * Returns value with given key
  */
-int* map_get(map* m, char* key);
+void* map_get(map* m, char* key);
 
 /*
- * Prints given map
+ * Frees given map's tree
  */
-void map_print(map* m);
+void map_free(map* m);
+
+/*Returns size of given map*/
+int map_size(map* m);
 
 #endif

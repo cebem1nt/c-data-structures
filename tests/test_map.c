@@ -27,64 +27,80 @@ void print_tree(m_node* node) {
         print_tree(node->right);
     }
 }
-int main() {
+
+struct map* init() 
+{
     struct map* map = map_create();
 
     if (map == NULL) {
         printf("Memory allocation failed\n");
-        return 1;
     }
 
     // Test left-left case
-    map_set(map, "a", 1);
-    map_set(map, "b", 2);
-    map_set(map, "c", 3);
+    int value_a = 1, value_b = 2, value_c = 3;
+    map_set(map, "a", &value_a, sizeof(int));
+    map_set(map, "b", &value_b, sizeof(int));
+    map_set(map, "c", &value_c, sizeof(int));
     print_tree(map->_tree);
     printf("\n\n");
 
     // Test right-right case
+    map_free(map);
     map = map_create();
-    map_set(map, "c", 3);
-    map_set(map, "b", 2);
-    map_set(map, "a", 1);
+    int value_c2 = 3, value_b2 = 2, value_a2 = 1;
+    map_set(map, "c", &value_c2, sizeof(int));
+    map_set(map, "b", &value_b2, sizeof(int));
+    map_set(map, "a", &value_a2, sizeof(int));
     print_tree(map->_tree);
     printf("\n\n");
-
 
     // Test left-right case
+    map_free(map);
     map = map_create();
-    map_set(map, "a", 1);
-    map_set(map, "c", 3);
-    map_set(map, "b", 2);
+    int value_a3 = 1, value_c3 = 3, value_b3 = 2;
+    map_set(map, "a", &value_a3, sizeof(int));
+    map_set(map, "c", &value_c3, sizeof(int));
+    map_set(map, "b", &value_b3, sizeof(int));
     print_tree(map->_tree);
     printf("\n\n");
-
 
     // Test right-left case
+    map_free(map);
     map = map_create();
-    map_set(map, "c", 3);
-    map_set(map, "a", 1);
-    map_set(map, "b", 2);
+    int value_c4 = 3, value_a4 = 1, value_b4 = 2;
+    map_set(map, "c", &value_c4, sizeof(int));
+    map_set(map, "a", &value_a4, sizeof(int));
+    map_set(map, "b", &value_b4, sizeof(int));
     print_tree(map->_tree);
     printf("\n\n");
-
 
     // Test deletion
+    map_free(map);
     map = map_create();
-    map_set(map, "a", 1);
-    map_set(map, "b", 2);
-    map_set(map, "c", 3);
+
+    int value_a5 = 1, value_b5 = 2, value_c5 = 3;
+    map_set(map, "a", &value_a5, sizeof(int));
+    map_set(map, "b", &value_b5, sizeof(int));
+    map_set(map, "c", &value_c5, sizeof(int));
     map_del(map, "b");
+
     print_tree(map->_tree);
     printf("\n\n");
 
+    int* a = map_get(map, "a");
+
+    printf("%i", *a);
+    return map;
+}
+
+int main() {
+    struct map* map = init();
 
     // Test insertion and deletion of multiple nodes
-    map = map_create();
     for (int i = 1; i <= 10; i++) {
         char key[10];
         sprintf(key, "%d", i);
-        map_set(map, key, i);
+        map_set(map, key, &i, sizeof(int));
     }
 
     print_tree(map->_tree);
@@ -99,6 +115,15 @@ int main() {
 
     printf("root: ");
     print_tree(map->_tree);
+
+    // Test on accessing "expired" values
+    int* stored = map_get(map, "a");
+
+    if (stored != NULL) {
+        printf("a: %i \n", *stored);
+    } else {
+        printf("NULL \n");
+    }
 
     return 0;
 }

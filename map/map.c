@@ -7,14 +7,15 @@
  * Lower your expectations, and use or hate on your own. 
  */
 
-#include "map.h"
-
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
 
-static m_node* create_node(char* key, int val) 
+#include "map.h"
+
+static m_node* create_node(char* key, void* val, size_t val_size) 
 {
     m_node* new = malloc(sizeof(m_node));
 
@@ -30,12 +31,20 @@ static m_node* create_node(char* key, int val)
     }
 
     strcpy(new->key, key);
-    new->val = val;
+    
+    new->val = malloc(val_size);
+    
+    if (new->val == NULL) {
+        free(new);
+        free(new->key);
+        return NULL;
+    }
+
+    memcpy(new->val, val, val_size);
 
     new->right = NULL;
     new->left = NULL;
 
-    // Hell, it caused me a big confusion
     new->height = 1;
     return new;
 }
@@ -143,10 +152,10 @@ static m_node* rotater(m_node* r)
 * AVL insertion function, but compare keys instead of values.
 * Returns modified tree instead of modifying in place
 */
-static m_node* insert(m_node* node, char* key, int val) 
+static m_node* insert(m_node* node, char* key, void* val, size_t val_size) 
 {
     if (node == NULL) {
-        node = create_node(key, val);
+        node = create_node(key, val, val_size);
         return node;
     }
 
@@ -159,16 +168,21 @@ static m_node* insert(m_node* node, char* key, int val)
     int cmp = strcmp(key, node->key);
 
     if (cmp < 0) {
-        node->left = insert(node->left, key, val);
+        node->left = insert(node->left, key, val, val_size);
     }
 
     else if (cmp > 0) {
-        node->right = insert(node->right, key, val);
+        node->right = insert(node->right, key, val, val_size);
     }
 
-    // Update value of node in case of equality of keys
     else {
-        node->val = val;
+        free(node->val);
+        node->val = malloc(val_size);
+
+        if (node->val != NULL) {
+            memcpy(node->val, val, val_size); 
+        }
+
         return node;
     }
 
@@ -275,7 +289,7 @@ static m_node* delete(m_node* node, char* key)
 }
 
 
-static int* find(m_node* node, char* key) 
+static void* find(m_node* node, char* key) 
 {
     if (node == NULL) return NULL;
 
@@ -290,20 +304,34 @@ static int* find(m_node* node, char* key)
     } 
 
     else {
-        return &node->val;
+        return node->val;
     }
 
     return NULL;
 }
 
-static void inorder(m_node* root) 
+static int get_size(m_node* node, int s)
 {
-    if (root != NULL) {
-        inorder(root->left);
-        printf("\"%s\": %d \n", root->key, root->val);
-        inorder(root->right);
+    if (node == NULL) {
+        return 0;
+    }
+
+    return 1 + get_size(node->right, s) + get_size(node->left, s);
+}
+
+static void tree_free(m_node* node) 
+{
+    if (node != NULL) {
+        tree_free(node->left);
+        tree_free(node->right);
+        
+        free(node->key);
+        free(node->val);
+        
+        free(node);
     }
 }
+
 
 struct map* map_create() 
 {
@@ -317,9 +345,9 @@ struct map* map_create()
     return new;
 }
 
-void map_set(map* m, char* key, int val) 
+void map_set(map* m, char* key, void* val, size_t val_size) 
 {
-    m->_tree = insert(m->_tree, key, val);
+    m->_tree = insert(m->_tree, key, val, val_size);
 }
 
 void map_del(map* m, char* key) 
@@ -327,12 +355,17 @@ void map_del(map* m, char* key)
     m->_tree = delete(m->_tree, key);
 }
 
-int* map_get(map* m, char* key) 
+void map_free(map* m)
 {
-    return find(m->_tree, key);
+    tree_free(m->_tree);
+    free(m);
 }
 
-void map_print(map* m) 
+int map_size(map* m) {
+    return get_size(m->_tree, 0);
+}
+
+void* map_get(map* m, char* key) 
 {
-    inorder(m->_tree);
+    return find(m->_tree, key);
 }
