@@ -3,68 +3,77 @@
 #include <stdio.h>
 #include <string.h>
 
-int main() 
+hmap* init() 
 {
     hmap* map = hm_create();
 
     float banananas = 2.10;
     int a = 1, b = 2, c = 3, d = 4;
+    
+
+
+    hm_set_f(map, "Bananana", &banananas);
+    hm_set_i(map, "a", &a);
+    printf("m.size: %zu\n", map->size);
+    hm_set_i(map, "b", &b);
+    printf("m.size: %zu\n", map->size);
+    hm_set_i(map, "c", &c);
+    printf("m.size: %zu\n", map->size);
+    hm_set_i(map, "d", &d);
+    printf("m.size: %zu\n", map->size);
+
+    return map;
+}
+
+int main() 
+{
     int e = 1, f = 2, g = 3, h = 4;
     int i = 1, j = 2, k = 3, l = 4;
     int m = 1, n = 2, o = 3, p = 4;
 
+    hmap* map = init();
 
-    // hm_insert(map, "Bananana", &banananas);
-    hm_set(map, "a", &a);
-    printf("m.size: %zu\n", map->size);
-    hm_set(map, "b", &b);
-    printf("m.size: %zu\n", map->size);
-    hm_set(map, "c", &c);
-    printf("m.size: %zu\n", map->size);
-    hm_set(map, "d", &d);
-    printf("m.size: %zu\n", map->size);
+    hm_bucket* smt = hm_get(map, "c");
+    int* smt_val = smt->val;
 
-    int* smt = hm_get(map, "c");
-
-    if (smt == NULL) {
+    if (smt->val == NULL) {
         printf("c: NULL \n");
         printf("Something definitely went wrong... \n");
     } else {
-        printf("c: %i \n", *smt);
+        printf("c: %i \n", *smt_val);
     }
 
     hm_del(map, "a");
     printf("a: deleted\n");
     printf("m.size: %zu\n", map->size);
 
-    hm_set(map, "e", &e);
+    hm_set_i(map, "e", &e);
     printf("m.size: %zu\n", map->size);
-    hm_set(map, "f", &f);
+    hm_set_i(map, "f", &f);
     printf("m.size: %zu\n", map->size);
-    hm_set(map, "g", &g);
+    hm_set_i(map, "g", &g);
     printf("m.size: %zu\n", map->size);
-    hm_set(map, "h", &h);
+    hm_set_i(map, "h", &h);
     printf("m.size: %zu\n", map->size);
-    hm_set(map, "i", &e);
+    hm_set_i(map, "i", &e);
     printf("m.size: %zu\n", map->size);
-    hm_set(map, "aergerger", &f);
+    hm_set_i(map, "aergerger", &f);
     printf("m.size: %zu\n", map->size);
-    hm_set(map, "iyutrywerqrw", &g);
+    hm_set_i(map, "iyutrywerqrw", &g);
     printf("m.size: %zu\n", map->size);
-    hm_set(map, "ywturwyurtu", &h);
+    hm_set_i(map, "ywturwyurtu", &h);
     printf("m.size: %zu\n", map->size);
-    hm_set(map, "trgtertertet", &e);
+    hm_set_i(map, "trgtertertet", &e);
     printf("m.size: %zu\n", map->size);
-    hm_set(map, "tyetyerytery", &f);
+    hm_set_i(map, "tyetyerytery", &f);
     printf("m.size: %zu\n", map->size);
-    hm_set(map, "ey6piyuo78o", &g);
     printf("m.size: %zu\n", map->size);
-    hm_set(map, "p09y8t8yio45736734562562", &h);
+    hm_set_i(map, "p09y8t8yio45736734562562", &h);
     printf("m.size: %zu\n", map->size);
 
     hm_free(map);
 
-    printf("Seems to be deleted\n");
+    printf("Seems to be freed\n");
 
     return 0;
 }

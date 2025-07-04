@@ -31,11 +31,83 @@ static uint32_t djb2(char* str)
     return hash;
 }
 
+// Sets value for bucket, and val_size as well
+static int set_bucket_val(hm_bucket* b, void* val, size_t val_size) 
+{
+    b->val = malloc(val_size);
+
+    if (b->val == NULL) {
+        return 1;
+    }
+
+    memcpy(b->val, val, val_size);
+    b->val_size = val_size;
+
+    return 0;
+}
+
+// Creates new bucket, returns NULL if failed
+static hm_bucket* create_bucket(char* key, void* val, size_t val_size) 
+{
+    hm_bucket* new = malloc(sizeof(hm_bucket));
+
+    if (new == NULL) {
+        return NULL;
+    }
+
+    new->key = strdup(key);
+   
+    if (new->key == NULL) {
+        free(new);
+        return NULL;
+    }
+   
+    if (set_bucket_val(new, val, val_size)) {
+        free(new->key);
+        free(new);
+        return NULL;
+    }
+
+    new->next = NULL;
+    return new;
+}
+
+// Frees bucket, but not the linked list chain inside
+static void free_bucket(hm_bucket* b) 
+{
+    free(b->key);
+    free(b->val);
+    free(b);
+}
+
+static void free_buckets(hmap* m) {
+    hm_bucket* b;
+    hm_bucket* next;
+    size_t i;
+
+    for (i = 0; i < m->max_cap; i++) {
+        b = m->entries[i];
+        
+        while (b != NULL) {
+            next = b->next;
+            free_bucket(b);
+            b = next;
+        }
+    }
+
+    free(m->entries);
+}
+
 static size_t get_bucket_index(size_t cap, char* key) 
 {
     if (cap <= 0) {
         fprintf(stderr, "ERROR! 'max_cap' of hmap can not be 0.");
         exit(132);
+    }
+
+     if (key == NULL) {
+        fprintf(stderr, "ERROR! 'key' is NULL.");
+        exit(133);
     }
 
     uint32_t hash = djb2(key);
@@ -44,54 +116,27 @@ static size_t get_bucket_index(size_t cap, char* key)
     return index;
 }
 
-static void free_buckets(hmap* m) {
-    size_t i;
-
-    for (i = 0; i < m->max_cap; i++) {
-        hm_bucket* b = m->entries[i];
-        
-        while (b != NULL) {
-            hm_bucket* next = b->next;
-            free(b->key);
-            free(b);
-            b = next;
-        }
-    }
-
-    free(m->entries);
-}
-
-static int insert_bucket(
-    hm_bucket** buckets, size_t index, char* key, void* val ) 
+static int insert_bucket(hm_bucket** buckets, hm_bucket* new, size_t index) 
 {
     hm_bucket* b = buckets[index];
 
     // Each bucket is null by default so if
     // the bucket is empty, loop will be omited
     while (b != NULL) {
-        if (strcmp(b->key, key) == 0) {
-            // If there is item with such a key, overwrite it.
-            b->val = val;
+        if (strcmp(b->key, new->key) == 0) {
+            // If keys are equal, free old value and set new one
+            free(b->val);
+            if (set_bucket_val(b, new->val, new->val_size)) {
+                return 1;
+            }
+            free_bucket(new);
             return 0;
         }
         b = b->next;
     }
 
     // No such entry, creating new one.
-    hm_bucket* new = malloc(sizeof(hm_bucket));
-
-    if (new == NULL) {
-        return 1;
-    }
-
-    new->key = strdup(key);
-   
-    if (new->key == NULL) {
-        return 1;
-    }
-   
-    new->val = val;
-
+  
     // In case of collision, we'll set new entry as head.
     // That way we won't have to iterate all the way to the end.
     new->next = buckets[index];
@@ -102,23 +147,36 @@ static int insert_bucket(
 static int hm_expand(hmap* m) 
 {
     size_t new_cap = m->max_cap * 2;
+    hm_bucket** new_buckets;
+    hm_bucket* b;
     
     if (new_cap < m->max_cap) {
         // Overflow, too big map.
         return 1;
     }
 
-    hm_bucket** new_buckets = calloc(new_cap, sizeof(hm_bucket*));
+    new_buckets = calloc(new_cap, sizeof(hm_bucket*));
     
     if (new_buckets == NULL) {
         return 1;
     }
 
     for (int i = 0; i < m->max_cap; i++) {
-        hm_bucket* b = m->entries[i];
+        b = m->entries[i];
+        while (b != NULL) {
+            hm_bucket* new = create_bucket(b->key, b->val, b->val_size);
 
-        if (b != NULL && b->key != NULL) {
-            insert_bucket(new_buckets, new_cap, b->key, &b->val);
+            if (new == NULL) {
+                free_buckets(m);
+                return 1;
+            }
+
+            if (insert_bucket(new_buckets, new, new_cap)) {
+                free_bucket(new);
+                return 1;
+            }
+
+            b = b->next;
         }
     }
 
@@ -126,14 +184,17 @@ static int hm_expand(hmap* m)
     free_buckets(m);
     m->entries = new_buckets;
     m->max_cap = new_cap;
+
     return 0;
 }
 
-int hm_set(hmap* m, char* key, void* val) 
+int hm_set(hmap* m, char* key, void* val, size_t val_size) 
 {
     size_t cap_percent, index;
     int expand_err, 
         insert_err;
+
+    hm_bucket* new;
 
     cap_percent = (m->size * 100) / m->max_cap;
 
@@ -142,8 +203,9 @@ int hm_set(hmap* m, char* key, void* val)
         if (expand_err) return 1;
     }
 
+    new = create_bucket(key, val, val_size);
     index = get_bucket_index(m->max_cap, key);
-    insert_err = insert_bucket(m->entries, index, key, val);
+    insert_err = insert_bucket(m->entries, new, index);
 
     if (insert_err) {
         return 1;
@@ -153,14 +215,14 @@ int hm_set(hmap* m, char* key, void* val)
     return 0;
 }
 
-void* hm_get(hmap* m, char* key)
+struct hm_bucket* hm_get(hmap* m, char* key)
 {
     size_t i = get_bucket_index(m->max_cap, key);
     hm_bucket* b = m->entries[i];
 
     while (b != NULL) {
         if (strcmp(b->key, key) == 0) {
-            return b->val;
+            return b;
         }
 
         b = b->next;
@@ -187,9 +249,7 @@ int hm_del(hmap* m, char* key)
                 prev->next = b->next;
             }
 
-            free(b->key);
-            free(b);
-
+            free_bucket(b);
             m->size--;
             
             return 0;
@@ -213,6 +273,7 @@ struct hmap* hm_create()
     new->entries = calloc(HM_DEFAULT_CAP, sizeof(hm_bucket*));
 
     if (new->entries == NULL) {
+        free(new);
         return NULL;
     }
 
