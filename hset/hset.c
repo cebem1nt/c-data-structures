@@ -1,5 +1,8 @@
 /*
  * Hash set in c.
+ * Open adressing has an enormous amount of problems, and i've allready 
+ * implemented closed adressing (or chaining) logic before that in hmap.
+ * This implementation will use Cuckoo hashing method.
  *
  * WARNING! 
  * Educational purpose only and you're the only one responsible here.
@@ -17,19 +20,74 @@
 
 static uint32_t djb2(char* str) 
 {
-    uint32_t hash = 5381;
+    uint32_t hash = DJB_OFFSET;
     char c;
 
     while ( ( c = *str++ ) ) {
-        hash = 33 * hash + c;
+        hash = DJB_PRIME * hash + c;
     }
 
     return hash;
 }
 
-static hs_entry* new_entry(void* val, size_t val_size)
+static uint32_t fnv32(char* str) 
 {
-    hs_entry* new = malloc(sizeof(hs_entry));
+    uint32_t hash = FNV_OFFSET_32;
+    char* p;
+
+    for (p = str; *p; p++) {
+        hash ^= (uint32_t)(unsigned char)(*p);
+        hash *= FNV_PRIME_32;
+    }
+
+    return hash;
+}
+
+static size_t get_entry_index(int8_t hash_id, void* key, size_t max_cap)
+{
+    char* str_key = (char*) key;
+    size_t index = -1;
+
+    switch (hash_id) {
+        case 1: 
+            index = djb2(str_key) % max_cap;
+            break;
+        case 2: 
+            index = fnv32(str_key) % max_cap;
+            break;
+    }   
+
+    return index;
+}
+
+static struct hs_entry** get_arr(int8_t id, hset_t* s) 
+{
+    switch (id) {
+        case 1: return s->arr1;
+        case 2: return s->arr2;
+    }
+
+    return NULL;
+}
+
+void hset_free(hset_t* s) 
+{
+    // Free entries
+    for (int i = 0; i < s->capacity / 2; i++) {
+        free(s->arr1[i]->val);
+        free(s->arr2[i]->val);
+        free(s->arr1[i]);
+        free(s->arr2[i]);
+    }
+
+    free(s->arr1);
+    free(s->arr2);
+    free(s);
+}
+
+struct hs_entry* hs_create_entry(void* val, size_t val_size) 
+{
+    struct hs_entry* new = malloc(sizeof(hs_entry_t));
 
     if (!new) {
         return NULL;
@@ -44,147 +102,85 @@ static hs_entry* new_entry(void* val, size_t val_size)
 
     memcpy(new->val, val, val_size);
     new->val_size = val_size;
-    new->is_deleted = 0;
 
     return new;
 }
 
-static int8_t is_tombstone(hs_entry* entry) 
-{
-    return entry->is_deleted;
-}
-
-static size_t get_entry_index(void* val, size_t max_size) 
-{
-    uint32_t hash;
-    size_t index;
-    
-    hash = djb2((char*) val);
-    index = hash % max_size;
-
-    return index;
-}
-
+// Capacity is total amount of elements stored, not amount of sub arrays
+// Capacity must be even number.
 struct hset* hset_create(size_t capacity) 
 {
-    hset* new_hset;
-    hs_entry** new_arr;
+    struct hset* new;
     
-    new_hset = malloc(sizeof(hset));
-    new_arr = calloc(capacity, sizeof(hs_entry*));
-
-    if (!new_hset || !new_arr) {
-        free(new_hset);
-        free(new_arr);
+    if (capacity % 2 != 0) {
         return NULL;
     }
 
-    new_hset->arr = new_arr;
-    new_hset->capacity = capacity;
-    new_hset->length = 0;
+    new = malloc(sizeof(hset_t));
+    
+    if (!new) {
+        return NULL;
+    }
 
-    return  new_hset;
+    new->arr1 = calloc(capacity / 2, sizeof(hs_entry_t*));
+    new->arr2 = calloc(capacity / 2, sizeof(hs_entry_t*));
+
+    if (!new->arr1 || !new->arr2) {
+        free(new->arr1);
+        free(new->arr2);
+        free(new);
+        return NULL;
+    }
+
+    new->capacity = capacity;
+    new->length = 0;
+
+    return new;
 }
 
-/* 
-* Returns 1 in case if value allready exist
-*         2 if array is full
-*         3 malloc failure
-*/
-int8_t hset_insert(hset* s, void* val, size_t val_size) 
+int8_t hset_insert(hset_t* s, void* val, size_t val_size) 
 {
-    hs_entry* itr;
-    hs_entry* new;
-    int cmp;
-
     if (s->length == s->capacity) {
-        return 2; 
+        return 2; // Hash set is full
     }
 
-    size_t index = get_entry_index(val, s->capacity);
-    size_t original_index = index;
+    struct hs_entry* new_entry;
+    struct hs_entry* current_entry;
 
-    while (s->arr[index] != NULL) {
-        itr = s->arr[index];
-        cmp = memcmp(itr->val, val, val_size); 
-        
-        if (cmp == 0 && !is_tombstone(itr)) {
-            return 1;
-        }
+    unsigned int itr = 0;
+    int8_t arr_id = 1;
 
-        index = (index + 1) % s->capacity;
-
-        if (index == original_index) {
-            return 2;
-        }
+    new_entry = hs_create_entry(val, val_size);    
+    
+    if (!new_entry) {
+        return -1;
     }
 
-    new = new_entry(val, val_size);
+    current_entry = new_entry;
 
-    if (new == NULL) return 3;
+    while (itr < HS_CUCKOO_MAX_ITR) 
+    {
+        size_t index = get_entry_index(arr_id, current_entry->val, s->capacity);
+        hs_entry_t* displaced_entry = get_arr(arr_id, s)[index];
 
-    s->arr[index] = new;
-    s->length++;
+        // Place the current entry in the calculated index
+        get_arr(arr_id, s)[index] = current_entry;
 
-    return 0;
-}
-
-int8_t hset_del(hset* s, void* val, size_t val_size)
-{
-    hs_entry* itr;
-    int cmp;
-
-    size_t index = get_entry_index(val, s->capacity);
-    size_t original_index = index;
-
-    while (s->arr[index] != NULL) {
-        itr = s->arr[index];
-        cmp = memcmp(itr->val, val, val_size);
-
-        if (cmp == 0 && !is_tombstone(itr)) {
-            size_t next = (index + 1) % s->capacity;
-            itr->is_deleted = 1;
-
-            // Little optimization on cuantitiy of tombs
-            if (s->arr[next] == NULL) {
-                free(itr->val);
-                free(itr);
-            }
-
-            s->length--;
-            return 1;
+        // If there was no displaced entry, we are done
+        if (!displaced_entry) {
+            s->length++;
+            return 0;
         }
 
-        index = (index + 1) % s->capacity;
-        if (index == original_index) {
-            break;
-        }
+        // Prepare for the next iteration
+        current_entry = displaced_entry;
+        arr_id = arr_id == 1  ?  2 : 1; // Switch between the two arrays
+        itr++;
     }
 
-    return 0;
-}
-
-int8_t hset_has(hset* s, void* val, size_t val_size) 
-{
-    hs_entry* itr;
-    int cmp;
-
-    size_t index = get_entry_index(val, s->capacity);
-    size_t original_index = index;
-
-    while (s->arr[index] != NULL) {
-        itr =  s->arr[index];
-        cmp = memcmp(itr->val, val, val_size);
-
-        if (cmp == 0) {
-            return 1;
-        }
-
-        index = (index + 1) % s->capacity;
-        if (index == original_index) {
-            break;
-        }
-    }
-
-    return 0;
+    // If we reach here, it means we hit the maximum iterations
+    free(current_entry->val);
+    free(current_entry);
+    
+    return 111; // Insertion failed due to too many iterations
 }
