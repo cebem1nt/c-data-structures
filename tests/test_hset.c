@@ -5,7 +5,7 @@
 hset* init() 
 {
     hset* set = hset_create(5);
-    int a = 1, b = 2, c = 3, d = 4, e = 5;
+    int a = 1132, b = 1231232, c = -223, d = 121224, e = 1225;
 
     hset_insert_i(set, &a);
     hset_insert_i(set, &b);

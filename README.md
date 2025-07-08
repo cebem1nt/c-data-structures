@@ -22,3 +22,4 @@ https://cmps-people.ok.ubc.ca/ylucet/DS/AVLtree.html
 https://github.com/benhoyt/ht/blob/master/ht.c
 https://theleo.zone/posts/hashmap-in-c/
 https://benhoyt.com/writings/hash-table-in-c/
+https://thenumb.at/Hashtables/

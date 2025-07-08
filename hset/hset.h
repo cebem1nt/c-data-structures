@@ -2,10 +2,12 @@
 #define HASH_SET_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 struct hs_entry {
     void* val;
     size_t val_size; 
+    int8_t is_deleted;
 };
 
 struct hset {
@@ -30,12 +32,12 @@ struct hset* hset_create(size_t capacity);
  *         2 if hash set is full
  *         0 on success
  */
-int hset_insert(hset* s, void* val, size_t val_size); 
+int8_t hset_insert(hset* s, void* val, size_t val_size); 
 
 /*
  * Returns does hash set has a value with given size
  */
-int hset_has(hset* s, void* val, size_t val_size);
+int8_t hset_has(hset* s, void* val, size_t val_size);
 
 #define hset_insert_i(s, val) hset_insert(s, val, sizeof(int))
 
