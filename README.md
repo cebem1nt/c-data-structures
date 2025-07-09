@@ -23,3 +23,5 @@ https://github.com/benhoyt/ht/blob/master/ht.c
 https://theleo.zone/posts/hashmap-in-c/
 https://benhoyt.com/writings/hash-table-in-c/
 https://thenumb.at/Hashtables/
+https://www.geeksforgeeks.org/dsa/cuckoo-hashing/
+https://cs.stanford.edu/~rishig/courses/ref/l13a.pdf
