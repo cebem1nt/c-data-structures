@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 void print_set(struct hs* set) 
@@ -21,6 +22,25 @@ void print_set(struct hs* set)
     }
 
     printf("\n");
+}
+
+// Straight forward function on checking are items unique (just in case)
+bool are_items_unique(struct hs* set) 
+{
+    for (size_t i = 0; i < set->capacity / 2; i++) 
+    {
+        if (set->arr1[i] == NULL) continue;
+        for (size_t j = 0; j < set->capacity / 2; j++) 
+        {
+            if (set->arr2[j] == NULL) continue;
+            int cmp = memcmp(set->arr1[i]->val, set->arr2[j]->val, set->arr1[i]->val_size);
+            if (cmp == 0) {
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
 
 struct hs* init() 
@@ -63,6 +83,10 @@ int main()
     }
 
     printf("capacity: %zu \n", set->capacity);
+    
+    // Check uniqueness
+    printf("Each item unique? : %i \n", are_items_unique(set));
+
 
     int a = 1, b = 2, c = 3, d = 4, e = 5;
     int f = 6, g = 7, h = 8, i = 9, j = 10;
