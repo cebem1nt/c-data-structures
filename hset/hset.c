@@ -4,14 +4,15 @@
  * implemented closed adressing (or chaining) logic before that in hmap.
  * This implementation will use Cuckoo hashing method.
  *
+ * I wanted to implement a hash set with static size, but as i see it's 
+ * simply impossible, you have to resize the table anyways
+ *
  * WARNING! 
  * Educational purpose only and you're the only one responsible here.
  * The following code might be dumb, incompetent, bla bla bla.
  * Lower your expectations, and use or hate on your own. 
  */
 
-#include <stddef.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,11 +21,14 @@
 
 static uint32_t djb2(char* str) 
 {
-    uint32_t hash = DJB_OFFSET;
+    const uint32_t offset = 5381;
+    const uint32_t prime = 33;
+
+    uint32_t hash = offset;
     char c;
 
     while ( ( c = *str++ ) ) {
-        hash = DJB_PRIME * hash + c;
+        hash = prime * hash + c;
     }
 
     return hash;
@@ -32,12 +36,15 @@ static uint32_t djb2(char* str)
 
 static uint32_t fnv32(char* str) 
 {
-    uint32_t hash = FNV_OFFSET_32;
+    const uint32_t offset = 2166136261U;
+    const uint32_t prime = 16777619U;
+
+    uint32_t hash = offset;
     char* p;
 
     for (p = str; *p; p++) {
         hash ^= (uint32_t)(unsigned char)(*p);
-        hash *= FNV_PRIME_32;
+        hash *= prime;
     }
 
     return hash;
@@ -60,7 +67,7 @@ static size_t get_entry_index(int8_t hash_id, void* key, size_t max_cap)
     return index;
 }
 
-static struct hs_entry** get_arr(int8_t id, hset_t* s) 
+static struct hs_entry** get_arr(struct hs* s, int8_t id) 
 {
     switch (id) {
         case 1: return s->arr1;
@@ -70,24 +77,28 @@ static struct hs_entry** get_arr(int8_t id, hset_t* s)
     return NULL;
 }
 
-void hset_free(hset_t* s) 
+void hs_free_entry(struct hs_entry* e) 
+{
+    free(e->val);
+    free(e);
+}
+
+void hs_free(struct hs* set) 
 {
     // Free entries
-    for (int i = 0; i < s->capacity / 2; i++) {
-        free(s->arr1[i]->val);
-        free(s->arr2[i]->val);
-        free(s->arr1[i]);
-        free(s->arr2[i]);
+    for (int i = 0; i < set->capacity / 2; i++) {
+        hs_free_entry(set->arr1[i]);
+        hs_free_entry(set->arr2[i]);
     }
 
-    free(s->arr1);
-    free(s->arr2);
-    free(s);
+    free(set->arr1);
+    free(set->arr2);
+    free(set);
 }
 
 struct hs_entry* hs_create_entry(void* val, size_t val_size) 
 {
-    struct hs_entry* new = malloc(sizeof(hs_entry_t));
+    struct hs_entry* new = malloc(sizeof(struct hs_entry));
 
     if (!new) {
         return NULL;
@@ -108,22 +119,20 @@ struct hs_entry* hs_create_entry(void* val, size_t val_size)
 
 // Capacity is total amount of elements stored, not amount of sub arrays
 // Capacity must be even number.
-struct hset* hset_create(size_t capacity) 
+struct hs* hs_create(size_t capacity) 
 {
-    struct hset* new;
-    
-    if (capacity % 2 != 0) {
-        return NULL;
-    }
+    struct hs* new;
 
-    new = malloc(sizeof(hset_t));
+    // Round odd numbers
+    capacity = (capacity / 2 ) * 2;
+    new = malloc(sizeof(struct hs));
     
     if (!new) {
         return NULL;
     }
 
-    new->arr1 = calloc(capacity / 2, sizeof(hs_entry_t*));
-    new->arr2 = calloc(capacity / 2, sizeof(hs_entry_t*));
+    new->arr1 = calloc(capacity / 2, sizeof(struct hs_entry*));
+    new->arr2 = calloc(capacity / 2, sizeof(struct hs_entry*));
 
     if (!new->arr1 || !new->arr2) {
         free(new->arr1);
@@ -133,14 +142,15 @@ struct hset* hset_create(size_t capacity)
     }
 
     new->capacity = capacity;
+    new->sub_cap = capacity / 2;
     new->length = 0;
 
     return new;
 }
 
-int8_t hset_insert(hset_t* s, void* val, size_t val_size) 
+int8_t hs_insert(struct hs* set, void* val, size_t val_size) 
 {
-    if (s->length == s->capacity) {
+    if (set->length == set->capacity) {
         return 2; // Hash set is full
     }
 
@@ -158,17 +168,22 @@ int8_t hset_insert(hset_t* s, void* val, size_t val_size)
 
     current_entry = new_entry;
 
-    while (itr < HS_CUCKOO_MAX_ITR) 
+    while (itr < set->capacity) 
     {
-        size_t index = get_entry_index(arr_id, current_entry->val, s->capacity);
-        hs_entry_t* displaced_entry = get_arr(arr_id, s)[index];
+        struct hs_entry* displaced_entry;
+        struct hs_entry** arr;
+        size_t index;
+
+        index = get_entry_index(arr_id, current_entry->val, set->sub_cap);
+        arr = get_arr(set, arr_id);
+        displaced_entry = arr[index];
 
         // Place the current entry in the calculated index
-        get_arr(arr_id, s)[index] = current_entry;
+        arr[index] = current_entry;
 
         // If there was no displaced entry, we are done
         if (!displaced_entry) {
-            s->length++;
+            set->length++;
             return 0;
         }
 
@@ -179,8 +194,29 @@ int8_t hset_insert(hset_t* s, void* val, size_t val_size)
     }
 
     // If we reach here, it means we hit the maximum iterations
-    free(current_entry->val);
-    free(current_entry);
+    hs_free_entry(current_entry);
     
     return 111; // Insertion failed due to too many iterations
+}
+
+bool hs_has(struct hs* set, void* val, size_t val_size) 
+{
+    for (int i = 1; i <= HS_TOTAL_ARRS; i++) 
+    {
+        size_t index;
+        struct hs_entry** arr;
+        int cmp;
+
+        index = get_entry_index(i, val, set->sub_cap);
+        arr = get_arr(set, i);
+
+        if (!arr) return false;
+
+        if (arr[index] != NULL) {
+            cmp = memcmp(arr[index]->val, val, val_size); 
+            if (cmp == 0) return true;
+        }
+    }
+
+    return false;
 }
