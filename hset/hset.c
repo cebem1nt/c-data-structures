@@ -119,20 +119,20 @@ struct hs_entry* hs_create_entry(void* val, size_t val_size)
 
 // Capacity is total amount of elements stored, not amount of sub arrays
 // Capacity must be even number.
-struct hs* hs_create(size_t capacity) 
+struct hs* hs_create(size_t initial_capacity) 
 {
     struct hs* new;
 
     // Round odd numbers
-    capacity = (capacity / 2 ) * 2;
+    initial_capacity = (initial_capacity / 2 ) * 2;
     new = malloc(sizeof(struct hs));
     
     if (!new) {
         return NULL;
     }
 
-    new->arr1 = calloc(capacity / 2, sizeof(struct hs_entry*));
-    new->arr2 = calloc(capacity / 2, sizeof(struct hs_entry*));
+    new->arr1 = calloc(initial_capacity / 2, sizeof(struct hs_entry*));
+    new->arr2 = calloc(initial_capacity / 2, sizeof(struct hs_entry*));
 
     if (!new->arr1 || !new->arr2) {
         free(new->arr1);
@@ -141,8 +141,8 @@ struct hs* hs_create(size_t capacity)
         return NULL;
     }
 
-    new->capacity = capacity;
-    new->sub_cap = capacity / 2;
+    new->capacity = initial_capacity;
+    new->sub_cap = initial_capacity / 2;
     new->length = 0;
 
     return new;
@@ -185,8 +185,14 @@ int8_t hs_insert(struct hs* set, void* val, size_t val_size)
         if (!displaced_entry) {
             set->length++;
             return 0;
-        }
+        } 
 
+        if (memcmp(displaced_entry->val, current_entry->val, val_size) == 0) 
+        {
+            hs_free_entry(displaced_entry);
+            return 1;
+        }
+ 
         // Prepare for the next iteration
         current_entry = displaced_entry;
         arr_id = arr_id == 1  ?  2 : 1; // Switch between the two arrays
