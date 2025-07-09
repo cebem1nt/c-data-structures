@@ -1,7 +1,6 @@
 #include "../hset/hset.h"
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -9,7 +8,7 @@ void print_set(struct hs* set)
 {
     int itr = 0;
 
-    while (itr < set->sub_cap) {
+    while (itr < set->capacity / 2) {
         if (set->arr1[itr]) {
             printf("%i,", *(int*) set->arr1[itr]->val);
         }
@@ -39,7 +38,6 @@ struct hs* init()
 
     for (int i = 0; i < max_itr; i++) {
         int random_number = (rand() % (INT32_MAX)) - (rand() % (INT32_MAX));
-
         int ret = hs_insert_i(set, &random_number);
         
         printf("Inserting: %i\n", random_number);
@@ -64,7 +62,6 @@ int main()
         return 1;
     }
 
-    // Init size will be round to 4
     printf("capacity: %zu \n", set->capacity);
 
     int a = 1, b = 2, c = 3, d = 4, e = 5;

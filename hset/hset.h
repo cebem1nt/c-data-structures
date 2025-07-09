@@ -16,7 +16,6 @@ struct hs {
     struct hs_entry** arr1;
     struct hs_entry** arr2;
     size_t capacity;
-    size_t sub_cap; // Capacity of each sub-array
     size_t length;
 };
 

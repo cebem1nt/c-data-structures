@@ -13,6 +13,8 @@
  * Lower your expectations, and use or hate on your own. 
  */
 
+#include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -142,10 +144,60 @@ struct hs* hs_create(size_t initial_capacity)
     }
 
     new->capacity = initial_capacity;
-    new->sub_cap = initial_capacity / 2;
     new->length = 0;
 
     return new;
+}
+
+static int8_t hs_expand(struct hs* set) 
+{
+    size_t new_cap = set->capacity * 2;
+    struct hs_entry** new_arr1;
+    struct hs_entry** new_arr2;
+
+    if (new_cap < set->capacity) 
+    {
+        return 1;
+    }
+
+    new_arr1 = calloc(new_cap / 2, sizeof(struct hs_entry*));
+    new_arr2 = calloc(new_cap / 2, sizeof(struct hs_entry*));
+
+    if (!new_arr1 || !new_arr2) 
+    {
+        free(new_arr1);
+        free(new_arr2);
+
+        return 2;
+    }
+
+    for (int i = 0; i < set->capacity / 2; i++) 
+    {
+        struct hs_entry* a;
+        struct hs_entry* b;
+
+        a = set->arr1[i];
+        b = set->arr2[i];
+
+        if (a) {
+            size_t index = get_entry_index(1, a->val, new_cap / 2); 
+            new_arr1[index] = a; 
+        }
+
+        if (b) {
+            size_t index = get_entry_index(2, b->val, new_cap / 2); 
+            new_arr2[index] = b; 
+        }
+    }
+
+    free(set->arr1);
+    free(set->arr2);
+
+    set->capacity = new_cap;
+    set->arr1 = new_arr1;
+    set->arr2 = new_arr2;
+
+    return 0;
 }
 
 int8_t hs_insert(struct hs* set, void* val, size_t val_size) 
@@ -174,7 +226,7 @@ int8_t hs_insert(struct hs* set, void* val, size_t val_size)
         struct hs_entry** arr;
         size_t index;
 
-        index = get_entry_index(arr_id, current_entry->val, set->sub_cap);
+        index = get_entry_index(arr_id, current_entry->val, set->capacity / 2);
         arr = get_arr(set, arr_id);
         displaced_entry = arr[index];
 
@@ -200,9 +252,10 @@ int8_t hs_insert(struct hs* set, void* val, size_t val_size)
     }
 
     // If we reach here, it means we hit the maximum iterations
-    hs_free_entry(current_entry);
-    
-    return 111; // Insertion failed due to too many iterations
+    hs_expand(set);
+    hs_insert(set, current_entry->val, current_entry->val_size);
+
+    return 0;
 }
 
 bool hs_has(struct hs* set, void* val, size_t val_size) 
@@ -213,7 +266,7 @@ bool hs_has(struct hs* set, void* val, size_t val_size)
         struct hs_entry** arr;
         int cmp;
 
-        index = get_entry_index(i, val, set->sub_cap);
+        index = get_entry_index(i, val, set->capacity / 2);
         arr = get_arr(set, i);
 
         if (!arr) return false;
