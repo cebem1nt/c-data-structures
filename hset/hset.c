@@ -2,10 +2,10 @@
  * Hash set in c.
  * Open adressing has an enormous amount of problems, and i've allready 
  * implemented closed adressing (or chaining) logic before that in hmap.
- * This implementation will use Cuckoo hashing method.
+ * This implementation will use Cuckoo hashing method. (which is also open adressing)
  *
  * I wanted to implement a hash set with static size, but as i see it's 
- * simply impossible, you have to resize the table anyways
+ * simply impossible if you use open adressing, you have to resize the table anyways
  *
  * WARNING! 
  * Educational purpose only and you're the only one responsible here.
@@ -15,82 +15,135 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "hset.h"
 
-static uint32_t djb2(char* str) 
+/* 
+ * Big, scary, but hell efficient hash function designed to work with any data type 
+ * https://github.com/PeterScott/murmur3
+ * https://en.wikipedia.org/wiki/MurmurHash
+ */
+static uint32_t murmurhash3(void* key, int len) 
 {
-    const uint32_t offset = 5381;
-    const uint32_t prime = 33;
+    const uint32_t c1 = 0xcc9e2d28;
+    const uint32_t c2 = 0x1b873593;
+    const uint32_t r1 = 15;
+    const uint32_t r2 = 13;
+    const uint32_t m = 5;
+    const uint32_t n = 0xe6546b64;
 
-    uint32_t hash = offset;
-    char c;
+    uint32_t seed = 0x12345678;
 
-    while ( ( c = *str++ ) ) {
-        hash = prime * hash + c;
+    uint32_t hash = seed;
+
+    uint8_t* data = (uint8_t*)key;
+    for (int i = 0; i < len - 3; i += 4) {
+        uint32_t k = *(uint32_t*)(data + i);
+        k *= c1;
+        k = (k << r1) | (k >> (32 - r1));
+        k *= c2;
+
+        hash ^= k;
+        hash = (hash << r2) | (hash >> (32 - r2));
+        hash = hash * m + n;
     }
+
+    int remainder = len & 0x3;
+    if (remainder > 0) {
+        uint32_t k = 0;
+        if (remainder == 1) k = data[len - 4];
+        else if (remainder == 2) k = *(uint16_t*)(data + len - 4);
+        else if (remainder == 3) k = *(uint8_t*)(data + len - 4) + (*(uint16_t*)(data + len - 2) << 8);
+
+        k *= c1;
+        k = (k << r1) | (k >> (32 - r1));
+        k *= c2;
+
+        hash ^= k;
+    }
+
+    hash ^= len;
+    hash ^= (hash >> 16);
+    hash *= 0x85ebca6b;
+    hash ^= (hash >> 13);
+    hash *= 0xc2b2ae35;
+    hash ^= (hash >> 16);
 
     return hash;
 }
 
-static uint32_t fnv32(char* str) 
+
+// Hash function 2
+static uint32_t fnv1a(void* data, size_t len) 
 {
     const uint32_t offset = 2166136261U;
     const uint32_t prime = 16777619U;
 
     uint32_t hash = offset;
-    char* p;
+    uint8_t* p = (uint8_t*)data;
 
-    for (p = str; *p; p++) {
-        hash ^= (uint32_t)(unsigned char)(*p);
+    for (size_t i = 0; i < len; i++) {
+        hash ^= p[i];
         hash *= prime;
     }
 
     return hash;
 }
 
-static size_t get_entry_index(int8_t hash_id, void* key, size_t max_cap)
+/* 
+ * Returns index (based on given sub_cap) for entry with given key. 
+ * In case of invalid number, returns INT32_MAX
+ *
+ * Params:
+ *   > sub_cap: capacity of sub array (capacity / HS_TOTAL_ARRS) 
+ *   > id: number of hash function or of array 
+ */
+static size_t get_entry_index(void* key, size_t key_size, int8_t id, size_t sub_cap)
 {
-    char* str_key = (char*) key;
-    size_t index = -1;
-
-    switch (hash_id) {
+    switch (id) {
         case 1: 
-            index = djb2(str_key) % max_cap;
-            break;
+            return murmurhash3(key, key_size) % sub_cap;
         case 2: 
-            index = fnv32(str_key) % max_cap;
-            break;
+            return fnv1a(key, key_size) % sub_cap;
+        default:
+            return INT32_MAX;
     }   
-
-    return index;
 }
 
+/* 
+ * Returns sub-array based on its index 
+ * Returns NULL if index is invalid
+ */
 static struct hs_entry** get_arr(struct hs* s, int8_t id) 
 {
     switch (id) {
-        case 1: return s->arr1;
-        case 2: return s->arr2;
+        case 1:
+            return s->arr1;
+        case 2: 
+            return s->arr2;
+        default:
+            return NULL; 
     }
-
-    return NULL;
 }
 
 void hs_free_entry(struct hs_entry* e) 
 {
-    free(e->val);
-    free(e);
+    if (e) {
+        free(e->val);
+        free(e);
+    }
 }
 
 void hs_free(struct hs* set) 
 {
-    // Free entries
-    for (int i = 0; i < set->capacity / 2; i++) {
+    for (int i = 0; i < set->capacity / 2; i++) 
+    {
         hs_free_entry(set->arr1[i]);
         hs_free_entry(set->arr2[i]);
+        set->arr1[i] = NULL;
+        set->arr2[i] = NULL;
     }
 
     free(set->arr1);
@@ -119,15 +172,12 @@ struct hs_entry* hs_create_entry(void* val, size_t val_size)
     return new;
 }
 
-// Capacity is total amount of elements stored, not amount of sub arrays
-// Capacity must be even number.
 struct hs* hs_create(size_t initial_capacity) 
 {
-    struct hs* new;
+    struct hs* new = malloc(sizeof(struct hs));
 
     // Round odd numbers
     initial_capacity = (initial_capacity / 2 ) * 2;
-    new = malloc(sizeof(struct hs));
     
     if (!new) {
         return NULL;
@@ -149,6 +199,12 @@ struct hs* hs_create(size_t initial_capacity)
     return new;
 }
 
+/*
+ * Returns:
+ *  > 2: Overflow of new capacity size
+ *  > 3: Memory allocation failed
+ *  > 0: All fine
+ */
 static int8_t hs_expand(struct hs* set) 
 {
     size_t new_cap = set->capacity * 2;
@@ -157,7 +213,7 @@ static int8_t hs_expand(struct hs* set)
 
     if (new_cap < set->capacity) 
     {
-        return 1;
+        return 2;
     }
 
     new_arr1 = calloc(new_cap / 2, sizeof(struct hs_entry*));
@@ -168,7 +224,7 @@ static int8_t hs_expand(struct hs* set)
         free(new_arr1);
         free(new_arr2);
 
-        return 2;
+        return 3;
     }
 
     for (int i = 0; i < set->capacity / 2; i++) 
@@ -180,12 +236,12 @@ static int8_t hs_expand(struct hs* set)
         b = set->arr2[i];
 
         if (a) {
-            size_t index = get_entry_index(1, a->val, new_cap / 2); 
+            size_t index = get_entry_index(a->val, a->val_size, 1, new_cap / 2); 
             new_arr1[index] = a; 
         }
 
         if (b) {
-            size_t index = get_entry_index(2, b->val, new_cap / 2); 
+            size_t index = get_entry_index(b->val, b->val_size, 2, new_cap / 2); 
             new_arr2[index] = b; 
         }
     }
@@ -200,14 +256,22 @@ static int8_t hs_expand(struct hs* set)
     return 0;
 }
 
+/*
+ * Returns:
+ *  > 1: Entry allready exists
+ *  > 2: Overflow of new capacity size
+ *  > 3: Memory allocation failed
+ *  > 0: All fine
+ */
 int8_t hs_insert(struct hs* set, void* val, size_t val_size) 
 {
-    if (set->length == set->capacity) {
-        return 2; // Hash set is full
-    }
+    /*   
+     * We'll track amount of iterations, if it exceeds set's 
+     * capacity, than it's necesarry to expnad hash set
+     */
 
     struct hs_entry* new_entry;
-    struct hs_entry* current_entry;
+    struct hs_entry* cur_entry;
 
     unsigned int itr = 0;
     int8_t arr_id = 1;
@@ -215,10 +279,10 @@ int8_t hs_insert(struct hs* set, void* val, size_t val_size)
     new_entry = hs_create_entry(val, val_size);    
     
     if (!new_entry) {
-        return -1;
+        return 3;
     }
 
-    current_entry = new_entry;
+    cur_entry = new_entry;
 
     while (itr < set->capacity) 
     {
@@ -226,12 +290,12 @@ int8_t hs_insert(struct hs* set, void* val, size_t val_size)
         struct hs_entry** arr;
         size_t index;
 
-        index = get_entry_index(arr_id, current_entry->val, set->capacity / 2);
+        index = get_entry_index(cur_entry->val, cur_entry->val_size, arr_id,  set->capacity / 2);
         arr = get_arr(set, arr_id);
         displaced_entry = arr[index];
 
         // Place the current entry in the calculated index
-        arr[index] = current_entry;
+        arr[index] = cur_entry;
 
         // If there was no displaced entry, we are done
         if (!displaced_entry) {
@@ -239,23 +303,22 @@ int8_t hs_insert(struct hs* set, void* val, size_t val_size)
             return 0;
         } 
 
-        if (memcmp(displaced_entry->val, current_entry->val, val_size) == 0) 
+        // If displaced entry has same value, exit
+        if (memcmp(displaced_entry->val, cur_entry->val, val_size) == 0) 
         {
             hs_free_entry(displaced_entry);
             return 1;
         }
- 
-        // Prepare for the next iteration
-        current_entry = displaced_entry;
+
+        // Keep bouncing until each entry is placed
+        cur_entry = displaced_entry;
         arr_id = arr_id == 1  ?  2 : 1; // Switch between the two arrays
         itr++;
     }
 
     // If we reach here, it means we hit the maximum iterations
     hs_expand(set);
-    hs_insert(set, current_entry->val, current_entry->val_size);
-
-    return 0;
+    return hs_insert(set, cur_entry->val, cur_entry->val_size);
 }
 
 bool hs_has(struct hs* set, void* val, size_t val_size) 
@@ -264,18 +327,43 @@ bool hs_has(struct hs* set, void* val, size_t val_size)
     {
         size_t index;
         struct hs_entry** arr;
-        int cmp;
 
-        index = get_entry_index(i, val, set->capacity / 2);
+        index = get_entry_index(val, val_size, i, set->capacity / 2);
         arr = get_arr(set, i);
 
-        if (!arr) return false;
-
-        if (arr[index] != NULL) {
-            cmp = memcmp(arr[index]->val, val, val_size); 
-            if (cmp == 0) return true;
+        if (arr[index]) 
+        {
+            if (memcmp(arr[index]->val, val, val_size) == 0) 
+            {
+                return true;
+            }
         }
     }
 
     return false;
+}
+
+int8_t hs_del(struct hs* set, void* val, size_t val_size) 
+{
+    for (int i = 1; i <= HS_TOTAL_ARRS; i++) 
+    {
+        size_t index;
+        struct hs_entry** arr;
+
+        index = get_entry_index(val, val_size, i, set->capacity / 2);
+        arr = get_arr(set, i);
+
+        if (arr[index]) 
+        {
+            if (memcmp(arr[index]->val, val, val_size) == 0) 
+            {
+                hs_free_entry(arr[index]);
+                arr[index] = NULL;
+                set->length--;
+                return 0;
+            }
+        }
+    }
+
+    return 1;
 }

@@ -10,7 +10,7 @@ A repository with impleemntations of a bunch of different data structures. Use a
 - [ ] Heap (min/max)
 - [x] Map (tree based)
 - [x] Hashmap 
-- [ ] Hashset
+- [x] Hashset
 - [ ] Red-Black Tree (Real boss fight)
 - [ ] Graphs (Hell, how is it working, I'm scared) 
 
@@ -25,3 +25,4 @@ https://benhoyt.com/writings/hash-table-in-c/
 https://thenumb.at/Hashtables/
 https://www.geeksforgeeks.org/dsa/cuckoo-hashing/
 https://cs.stanford.edu/~rishig/courses/ref/l13a.pdf
+https://github.com/PeterScott/murmur3

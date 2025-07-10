@@ -45,9 +45,9 @@ bool are_items_unique(struct hs* set)
 
 struct hs* init() 
 {
-    const int set_size = 60;
+    const int set_size = 100;
     struct hs* set = hs_create(set_size);
-    int max_itr = set_size + 10;
+    int max_itr = set_size + 20;
 
     srand(time(NULL));
 
@@ -56,20 +56,48 @@ struct hs* init()
         return NULL;
     }
 
-    for (int i = 0; i < max_itr; i++) {
+    printf("Testing on inserting huge amount of items\n");
+
+    for (int i = 0; i < max_itr; i++) 
+    {
         int random_number = (rand() % (INT32_MAX)) - (rand() % (INT32_MAX));
         int ret = hs_insert_i(set, &random_number);
         
+        printf("\n");
         printf("Inserting: %i\n", random_number);
         printf("Length: %zu \n", set->length);
         printf("Return code: %i\n", ret);
-
-        if (ret == 111) {
-            print_set(set);
-            return NULL;
-        }
+        printf("\n");
     } 
 
+    print_set(set);
+
+    // printf("Freeing previous set & reusing it\n");
+    // hs_free(set);
+    // set = hs_create(set_size);
+
+    // printf("Testing on inserting huge amount of items + deleting all of them\n");
+    // printf("Printing set after freeing: \n");
+    // print_set(set);
+
+    // for (int i = 0; i < max_itr; i++) 
+    // {
+    //     int random_number = (rand() % (INT32_MAX)) - (rand() % (INT32_MAX));
+        
+    //     int ret_insert = hs_insert_i(set, &random_number);
+    //     int ret_has = hs_has_i(set, &random_number);
+    //     int ret_delete = hs_del_i(set, &random_number);
+
+        
+    //     printf("\n");
+    //     printf("Inserting & Deleting: %i\n", random_number);
+    //     printf("Has number? (after insertion): %i\n", ret_has);
+    //     printf("Length: %zu \n", set->length);
+    //     printf("Return code: (insert): %i, (delete): %i \n", ret_insert, ret_delete);
+    //     printf("\n");
+    // } 
+
+    // print_set(set);
     return set;
 }
 
@@ -82,8 +110,8 @@ int main()
         return 1;
     }
 
-    printf("capacity: %zu \n", set->capacity);
-    
+    printf("\nCapacity: %zu\n", set->capacity);
+
     // Check uniqueness
     printf("Each item unique? : %i \n", are_items_unique(set));
 
