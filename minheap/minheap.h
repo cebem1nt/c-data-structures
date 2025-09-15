@@ -56,9 +56,10 @@ void minheap_free(struct minheap* h);
 /*
  * Inserts provided value with its size into given minheap.
  * Returns:
- * -- 1: Not matching size (size of items that heap stores doesnt match with provided one)
+ * -- 1: Unmatching type (type of items that heap stores doesnt match with provided one)
  * -- 2: Memory failure
  * -- 3: Heap is full
+ * -- 4: Heap is NULL
  * -- 0: All fine
  */
 int8_t minheap_insert(struct minheap* h, minheap_type T, void* item);
@@ -71,12 +72,10 @@ int8_t minheap_insert(struct minheap* h, minheap_type T, void* item);
 void minheap_pop(struct minheap* h, minheap_type T, void* dest);
 
 
-// /*
-//  * Takes in a pointer to an array of any type, its size, type of items it stores.
-//  * Also takes in entry index, which is used for recursion (pass 0).
-//  *
-//  * Prioritizes items of an array "in place" 
-//  */
-// void minheap_heapify(void** arr, size_t arr_size, minheap_type arr_type, index_t entry_i); 
+/*
+ * Takes in an array of any type, its size, type of items array has and new minheap capacity.
+ * Based on params returns new minheap or NULL in case of failure
+ */
+struct minheap* minheap_from(minheap_type T, void* arr, size_t arr_length, size_t capacity);
 
 #endif

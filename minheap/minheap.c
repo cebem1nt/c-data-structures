@@ -1,3 +1,12 @@
+/*
+ * Implementation of a generic min heap.
+ * 
+ * WARNING! 
+ * Educational purpose only and you're the only one responsible here.
+ * The following code might be dumb, incompetent, bla bla bla.
+ * Lower your expectations, and use or hate on your own. 
+ */
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -123,6 +132,8 @@ struct minheap* minheap_init(minheap_type T, size_t capacity)
 
 int8_t minheap_insert(struct minheap* h, minheap_type T, void* item) 
 {
+    if (!h) return 4;
+
     if (h->type != T) {
         return 1;
     }
@@ -174,28 +185,26 @@ void minheap_free(struct minheap *h)
     free(h->items);
 }
 
+struct minheap* minheap_from(
+    minheap_type T, void* arr, size_t arr_length, size_t capacity
+) 
+{
+    struct minheap* new = minheap_init(T, capacity);
+    if (!new) {
+        return NULL;
+    }
 
-// FIXME
-// This one wont f***** work normally because ITS C BABE (there are no normal generics :(((( )
+    size_t esz = SIZEOF(T);
+    unsigned char* bytes = (unsigned char *)arr;
 
-// void minheap_heapify(
-//     void** arr, size_t arr_size, minheap_type arr_type, index_t entry_i) 
-// {
-//     index_t left = LCHILD(entry_i);
-//     index_t right = RCHILD(entry_i);
+    for (size_t i = 0; i < arr_length; i++) 
+    {
+        void* elem_ptr = (void*)(bytes + i * esz);
+        if (minheap_insert(new, T, elem_ptr) != 0) {
+            minheap_free(new);
+            return NULL;
+        }
+    }
 
-//     index_t min_index = entry_i;
-
-//     if (left < arr_size && LESS_THAN(arr[left], arr[min_index], arr_type)) {
-//         min_index = left;
-//     }
-
-//     if (right < arr_size && LESS_THAN(arr[right], arr[min_index], arr_type)) {
-//         min_index = right;
-//     }
-
-//     if (min_index != entry_i) {
-//         swap(arr, min_index, entry_i);
-//         minheap_heapify(arr, arr_size, arr_type, min_index);
-//     }
-// }
+    return new;
+}

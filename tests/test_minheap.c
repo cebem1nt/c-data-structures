@@ -5,7 +5,7 @@
 
 #include "../minheap/minheap.h"
 
-#define HEAP_SIZE 271231231
+const unsigned int HEAP_SIZE = 13000;
 
 int get_randint() 
 {
@@ -72,6 +72,12 @@ int main()
 {
     test_int_heap();
     // IM tooooo lazy to do the rest of tests 
+
+    int arr[10] = {12, 10, 29, 30, 20012, 12, 123, 12423432, 123123, 12314};
+
+    // ITS WORKING !!! 
+    struct minheap* prio = minheap_from(INT, arr, 10, 20);
+    print_int_heap(prio);
 
     return 0;
 }
