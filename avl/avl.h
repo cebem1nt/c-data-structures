@@ -2,6 +2,7 @@
 #define AVL_H
 
 #include <stdint.h>
+
 struct avl_node {
     int val;
     int height;

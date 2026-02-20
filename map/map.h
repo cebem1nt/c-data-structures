@@ -4,12 +4,16 @@
 #include <stddef.h>
 #include <string.h>
 
+#define map_seti(m, key, val) map_set(m, key, val, sizeof(int))
+#define map_sets(m, key, val) map_set(m, key, val, strlen(val) + 1)
+#define map_setf(m, key, val) map_set(m, key, val, sizeof(float))
+
 // AVL tree node with key attribute
 typedef struct m_node {
     char* key;
     void* val;
-    size_t val_size;
     int height;
+    size_t val_size;
     struct m_node* right;
     struct m_node* left;
 } m_node ;
@@ -52,11 +56,5 @@ void map_free(map* m);
  * Returns size of given map
  */
 int map_size(map* m);
-
-#define map_set_i(m, key, val) map_set(m, key, val, sizeof(int))
-
-#define map_set_s(m, key, val) map_set(m, key, val, strlen(val) + 1)
-
-#define map_set_f(m, key, val) map_set(m, key, val, sizeof(float))
 
 #endif

@@ -22,14 +22,14 @@
 static int n_set_key(m_node* n, char* key) 
 {
     // Key must not be null
-    if (key == NULL) return 1; 
+    if (key == NULL) 
+        return 1; 
 
     size_t len = strlen(key);
     n->key = malloc(len + 1);
 
-    if (n->key == NULL) {
+    if (n->key == NULL)
         return 1;
-    }
 
     strncpy(n->key, key, len);
     n->key[len] = '\0';

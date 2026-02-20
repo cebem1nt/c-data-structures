@@ -15,7 +15,7 @@
 
 #include "minheap.h"
 
-static bool LESS_THAN(void* a, void* b, minheap_type T)
+static inline bool LESS_THAN(void* a, void* b, minheap_type T)
 {
     switch (T) {
         case INT:
@@ -29,7 +29,7 @@ static bool LESS_THAN(void* a, void* b, minheap_type T)
     }
 }
 
-static bool BIGGER_THAN(void* a, void* b, minheap_type T)
+static inline bool BIGGER_THAN(void* a, void* b, minheap_type T)
 {
     switch (T) {
         case INT:
@@ -43,7 +43,7 @@ static bool BIGGER_THAN(void* a, void* b, minheap_type T)
     }
 }
 
-static size_t SIZEOF(minheap_type T) {
+static inline size_t SIZEOF(minheap_type T) {
     switch (T) {
         case INT:
             return sizeof(int);

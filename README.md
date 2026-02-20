@@ -6,8 +6,7 @@ A repository with impleemntations of a bunch of different data structures. Use a
 - [x] Linked list
 - [x] Binary Search Tree (BST)
 - [x] AVL Tree
-- [ ] ~~Sets (Sorted array based)~~ Just use avl / rb tree. 
-- [ ] Heap (min/max)
+- [x] Heap (min/max)
 - [x] Map (tree based)
 - [x] Hashmap 
 - [x] Hashset
@@ -21,7 +20,8 @@ A repository with impleemntations of a bunch of different data structures. Use a
 
 #### Trees
 - [Binary search tree](https://www.geeksforgeeks.org/binary-search-tree-set-1-search-and-insertion/)
-- [AVL trees]()
+- [AVL trees insertion](https://www.geeksforgeeks.org/dsa/insertion-in-an-avl-tree/)
+- [AVL trees deletion](https://www.geeksforgeeks.org/dsa/deletion-in-an-avl-tree/)
 - [AVL trees visualization](https://cmps-people.ok.ubc.ca/ylucet/DS/AVLtree.html)
 - [Red black trees](https://www.geeksforgeeks.org/introduction-to-red-black-tree/)
 
@@ -34,4 +34,4 @@ A repository with impleemntations of a bunch of different data structures. Use a
 - [Real good cuckoo hashing explanation](https://cs.stanford.edu/~rishig/courses/ref/l13a.pdf)
 
 #### Misc
-- [murmur 3 hash function](https://github.com/PeterScott/murmur3)
+- [Murmur 3 hash function](https://github.com/PeterScott/murmur3)
